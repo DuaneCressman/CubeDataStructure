@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CubeOrientation.CubeStructure;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,7 +27,7 @@ namespace CubeOrientation
         /// <summary>
         /// If the segment is in the correct location.
         /// </summary>
-        public bool isCorrect
+        public bool Solved
         {
             get
             {
@@ -39,20 +40,6 @@ namespace CubeOrientation
                 }
 
                 return true;
-            }
-        }
-
-        public SpaceTypes SpaceType
-        {
-            get
-            {
-                return location.Length switch
-                {
-                    1 => SpaceTypes.Center,
-                    2 => SpaceTypes.Edge,
-                    3 => SpaceTypes.Corner,
-                    _ => throw new Exception("This tags colours where invalid.")
-                };
             }
         }
 
@@ -107,7 +94,7 @@ namespace CubeOrientation
                     continue;
                 }
 
-                location[i] = Cube.RotateColour(sideRotating, location[i], clockwise ? 1 : -1);
+                location[i] = ColourOrder.RotateColour(sideRotating, location[i], clockwise ? 1 : -1);
             }
         }
 

@@ -8,9 +8,41 @@ namespace CubeOrientation
     {
         static void Main(string[] args)
         {
-            TestRotations();
+            TestGettingAFullFace();
+        }
 
-            TestGettingFaces();
+        public static void TestGettingAFullFace()
+        {
+            Cube cube = new Cube();
+
+            cube.RotateSlice('O', false);
+            cube.RotateSlice('R', true);
+            cube.RotateSlice('G', true);
+            cube.RotateSlice('G', true);
+            cube.RotateSlice('B', true);
+            cube.RotateSlice('O', false);
+            cube.RotateSlice('O', false);
+
+            char[] colours = "GRBOWY".ToCharArray();
+
+            for (int i = 0; i < 6; i++)
+            {
+                char[][] faceColours = cube.GetSideColours(colours[i], i < 4 ? 'Y' : 'R');
+
+                for (int y = 2; y >= 0; y--)
+                {
+                    string s = string.Empty;
+
+                    for (int x = 0; x < 3; x++)
+                    {
+                        s += faceColours[x][y];
+                    }
+
+                    Console.WriteLine(s);
+                }
+
+                Console.WriteLine();
+            }
         }
 
         public static void TestGettingFaces()

@@ -10,10 +10,7 @@ namespace CubeOrientation
     /// </summary>
     public class Segment
     {
-        private static readonly char[] WRotationOrder = { 'R', 'G', 'O', 'B' };
-        private static readonly char[] RRotationOrder = { 'W', 'B', 'Y', 'G' };
-        private static readonly char[] BRotationOrder = { 'W', 'O', 'Y', 'R' };
-        private const int ROTATION_ORDER_LENGTH = 4;
+
 
         /// <summary>
         /// The location of the segment on the cube.
@@ -102,35 +99,6 @@ namespace CubeOrientation
                 return;
             }
 
-            //get the order that the colours will need to rotate
-            char[] rotationOrder;
-            switch (sideRotating)
-            {
-                case 'W':
-                case 'Y':
-                    rotationOrder = WRotationOrder;
-                    break;
-
-                case 'R':
-                case 'O':
-                    rotationOrder = RRotationOrder;
-                    break;
-
-                case 'B':
-                case 'G':
-                    rotationOrder = BRotationOrder;
-                    break;
-
-                default:
-                    throw new Exception("The side rotating was invalid");
-            }
-
-            //if the side rotating is Yellow, Orange, or Green, we can just use White, Red, or Blue rotation orders in revers.  
-            if (!"WRB".Contains(sideRotating))
-            {
-                clockwise = !clockwise;
-            }
-
             for (int i = 0; i < location.Length; i++)
             {
                 //The side that is on the cube doesn't change
@@ -139,21 +107,7 @@ namespace CubeOrientation
                     continue;
                 }
 
-                int index = rotationOrder.GetIndex(location[i]);
-
-                if (index == -1)
-                {
-                    throw new Exception("Unable to find this colour in the rotation order");
-                }
-
-                if (clockwise)
-                {
-                    location[i] = rotationOrder[index == ROTATION_ORDER_LENGTH - 1 ? 0 : index + 1];
-                }
-                else
-                {
-                    location[i] = rotationOrder[index == 0 ? ROTATION_ORDER_LENGTH - 1 : index - 1];
-                }
+                location[i] = Cube.RotateColour(sideRotating, location[i], clockwise ? 1 : -1);
             }
         }
 

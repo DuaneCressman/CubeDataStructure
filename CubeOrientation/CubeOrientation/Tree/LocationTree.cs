@@ -151,6 +151,11 @@ namespace CubeOrientation.Tree
 
             for (int i = 0; i < location.Length; i++)
             {
+                if (location[i] == '\0')
+                {
+                    break;
+                }
+
                 current = current.outEdges[current.edgeTitles.GetIndex(location[i])];
             }
 
@@ -183,6 +188,7 @@ namespace CubeOrientation.Tree
             'O' => 3,
             'B' => 4,
             'G' => 5,
+            '\0' => 6,
             _ => throw new Exception($"LocationTree can not handle the colour \'{c}\'")
         };
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CubeOrientation.Tree;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,24 +8,24 @@ namespace CubeOrientation
 {
     public class Cube
     {
-        /// <summary>
-        /// The segments that make up the cube
-        /// </summary>
-        private List<Segment> segments;
+        public LocationTree locationTree { get; private set; }
 
-        /// <summary>
-        /// If all the segments are correct.
-        /// </summary>
-        public bool CubeIsSolved
+        public bool CubeSolved
         {
             get
             {
-                return segments.Where(x => !x.isCorrect).ToList().Count == 0;
+                LocationTree.SegmentDelegate segmentIsSolved = (seg) => { return seg.isCorrect; };
+
+                int unsolvedSegments = locationTree.CheckSegmentsReturnValue(segmentIsSolved, false);
+
+                return unsolvedSegments == 0;
             }
         }
 
+
         public Cube()
         {
+            locationTree = new LocationTree();
             BuildCube();
         }
 
@@ -34,8 +35,6 @@ namespace CubeOrientation
         /// </summary>
         public void BuildCube()
         {
-            segments = new List<Segment>();
-
             char[] ROBG = { 'R', 'O', 'B', 'G' };
 
             for (int i = 0; i < 2; i++)
@@ -45,7 +44,7 @@ namespace CubeOrientation
                 //add the edges with 'W' and 'Y'
                 foreach (char c in ROBG)
                 {
-                    segments.Add(new Segment(WY, c));
+                    locationTree.SetSegment(new Segment(WY, c), WY, c);
                 }
 
                 //add the corners
@@ -53,8 +52,8 @@ namespace CubeOrientation
                 {
                     char RO = j == 0 ? 'R' : 'O';
 
-                    segments.Add(new Segment(WY, RO, 'B'));
-                    segments.Add(new Segment(WY, RO, 'G'));
+                    locationTree.SetSegment(new Segment(WY, RO, 'B'), WY, RO, 'B');
+                    locationTree.SetSegment(new Segment(WY, RO, 'G'), WY, RO, 'G');
                 }
             }
 
@@ -63,8 +62,8 @@ namespace CubeOrientation
             {
                 char RO = i == 0 ? 'R' : 'O';
 
-                segments.Add(new Segment(RO, 'B'));
-                segments.Add(new Segment(RO, 'G'));
+                locationTree.SetSegment(new Segment(RO, 'B'), RO, 'B');
+                locationTree.SetSegment(new Segment(RO, 'G'), RO, 'G');
             }
         }
 
@@ -75,32 +74,24 @@ namespace CubeOrientation
         /// <param name="clockwise">True: clockwise. False: counter clockwise</param>
         public void RotateSlice(char sideColour, bool clockwise)
         {
-            segments.Where(x => x.IsOnSide(sideColour)).ToList().ForEach(x => x.Rotate(sideColour, clockwise));
+            List<Segment> segments = locationTree.GetSegmentsByColour(sideColour);
+
+            foreach (Segment segment in segments)
+            {
+                segment.Rotate(sideColour, clockwise);
+                locationTree.SetSegment(segment, segment.location);
+            }
         }
 
-        public override string ToString()
+        public char GetFaceColour(char[] colourRefrence)
         {
-            string output = string.Empty;
+            char face = colourRefrence[0];
 
-            output += "\nEdges:\n";
-            segments.Where(x => x.SpaceType == SpaceTypes.Edge).ToList().ForEach((x) => output += x.ToString() + "\n");
-            output += "\nCorners:\n";
-            segments.Where(x => x.SpaceType == SpaceTypes.Corner).ToList().ForEach((x) => output += x.ToString() + "\n");
+            Segment segment = locationTree.GetSegment(colourRefrence);
 
-            output += $"\n\nTotal Locations: {segments.Count}";
+            int index = segment.location.GetIndex(face);
 
-            return output;
+            return segment.colours[index];
         }
-
-        public string GetColourName(char colour) => colour switch
-        {
-            'W' => "White",
-            'Y' => "Yellow",
-            'R' => "Red",
-            'O' => "Orange",
-            'B' => "Blue",
-            'G' => "Green",
-            _ => "Invalid Colour!"
-        };
     }
 }

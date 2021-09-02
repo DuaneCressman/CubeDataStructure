@@ -19,12 +19,12 @@ namespace CubeOrientation
         /// The location of the segment on the cube.
         /// This is held by 2 chars for an edge, and 3 chars for a corner.
         /// </summary>
-        private char[] location;
+        public char[] location { get; private set; }
 
         /// <summary>
         /// The colours that are on the segment.
         /// </summary>
-        private char[] colours;
+        public char[] colours { get; private set; }
 
         /// <summary>
         /// If the segment is in the correct location.
@@ -74,7 +74,7 @@ namespace CubeOrientation
             colours = new char[location.Length];
 
             location.CopyTo(this.location, 0);
-            location.CopyTo(this.colours, 0);
+            location.CopyTo(colours, 0);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace CubeOrientation
         /// <param name="sideColour">The colour of the side to check.</param>
         public bool IsOnSide(char sideColour)
         {
-            return GetIndex(sideColour, location) != -1;
+            return location.GetIndex(sideColour) != -1;
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace CubeOrientation
                     continue;
                 }
 
-                int index = GetIndex(location[i], rotationOrder);
+                int index = rotationOrder.GetIndex(location[i]);
 
                 if (index == -1)
                 {
@@ -157,30 +157,10 @@ namespace CubeOrientation
             }
         }
 
-        /// <summary>
-        /// Get the index of an element in an array.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <param name="array"></param>
-        /// <returns></returns>
-        public static int GetIndex<T>(T value, T[] array)
-        {
-            for (int i = 0; i < array.Length; i++)
-            {
-                if (Equals(value, array[i]))
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
         public override string ToString()
         {
             return $"\n" +
-                   $"   Piece: {new string(colours)}\n" +
+                   $"   Piece: {new string(colours)} \n" +
                    $"Location: {new string(location)}";
         }
     }

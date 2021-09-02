@@ -21,6 +21,8 @@ namespace CubeOrientation.CubeStructure
             Left = 3
         }
 
+        public static readonly char[] PLANES = { 'x', 'y', 'z' };
+
         /// <summary>The data structure that holds all the segments.</summary>
         private CubeStructure structure;
 
@@ -65,12 +67,48 @@ namespace CubeOrientation.CubeStructure
 
         #region Rotation
 
+        public void RotateSlices(string input)
+        {
+            input = input.Replace(" ", string.Empty);
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                char slice = input[i];
+                bool clockwise = true;
+
+                if (i + 1 < input.Length && input[i + 1] == '\'')
+                {
+                    i++;
+                    clockwise = false;
+                }
+
+                RotateSlice(slice, clockwise);
+            }
+        }
+
+        public void RotateSlice(char slice, bool clockwise)
+        {
+            if (COLOUR_ORDER.GetIndex(slice) != -1)
+            {
+                RotateSideSlice(slice, clockwise);
+                return;
+            }
+
+            if (PLANES.GetIndex(slice) != -1)
+            {
+                RotateMiddleSlice(slice, clockwise);
+                return;
+            }
+
+            throw new Exception($"{slice} is not a valid slice");
+        }
+
         /// <summary>
         /// Rotate a slice on the side of the cube the cube.
         /// </summary>
         /// <param name="slice">The colour of the side that is rotating</param>
         /// <param name="clockwise">True: clockwise. False: counter clockwise</param>
-        public void RotateSideSlice(char slice, bool clockwise)
+        private void RotateSideSlice(char slice, bool clockwise)
         {
             List<Segment> segments = structure.GetSlice(slice);
 
@@ -88,7 +126,7 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="slice">The slice to rotate ('x', 'y', 'z')</param>
         /// <param name="clockwise">Direction to rotate views from the base colour slice in the plane.</param>
-        public void RotateMiddleSlice(char slice, bool clockwise)
+        private void RotateMiddleSlice(char slice, bool clockwise)
         {
             char a, b;
 

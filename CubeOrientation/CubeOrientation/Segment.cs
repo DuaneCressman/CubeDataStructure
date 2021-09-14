@@ -11,8 +11,6 @@ namespace CubeOrientation
     /// </summary>
     public class Segment
     {
-
-
         /// <summary>
         /// The location of the segment on the cube.
         /// This is held by 2 chars for an edge, and 3 chars for a corner.
@@ -70,6 +68,14 @@ namespace CubeOrientation
         public bool IsOnSide(char sideColour)
         {
             return location.GetIndex(sideColour) != -1;
+        }
+
+        /// <summary>
+        /// If the segment has the colour passed in.
+        /// </summary>
+        public bool HasColour(char colour)
+        {
+            return colours.GetIndex(colour) != -1;
         }
 
         /// <summary>

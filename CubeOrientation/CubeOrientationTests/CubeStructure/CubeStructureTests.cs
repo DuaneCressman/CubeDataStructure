@@ -150,5 +150,92 @@ namespace CubeOrientation.CubeStructure.Tests
 
             Assert.IsFalse(errorFound);
         }
+
+        [TestMethod()]
+        public void GettingAllSegments()
+        {
+            Cube cube = new Cube();
+
+            List<Segment> all = cube.Structure.GetSegments();
+
+            Assert.IsTrue(all.Count == CubeStructure.TOTAL_SEGMENTS);
+        }
+
+        [TestMethod()]
+        public void GettingEdgeSegments()
+        {
+            Cube cube = new Cube();
+
+            List<Segment> edges = cube.Structure.GetSegments(CubeStructure.SegmentSubSets.Edges);
+
+            bool allCorrect = true;
+
+            allCorrect = edges.Count == CubeStructure.TOTAL_EDGE_SEGMENTS;
+
+            foreach(Segment segment in edges)
+            {
+                if(segment.location.Length != 2)
+                {
+                    allCorrect = false;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(allCorrect);
+        }
+
+        public void GettingCornersSegments()
+        {
+            Cube cube = new Cube();
+
+            List<Segment> corners = cube.Structure.GetSegments(CubeStructure.SegmentSubSets.Corners);
+
+            bool allCorrect = true;
+
+            allCorrect = corners.Count == CubeStructure.TOTAL_CORNER_SEGMENTS;
+
+            foreach (Segment segment in corners)
+            {
+                if (segment.location.Length != 3)
+                {
+                    allCorrect = false;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(allCorrect);
+        }
+
+        [TestMethod()]
+        public void GettingSegmentsBySide()
+        {
+            Cube cube = new Cube();
+
+            bool allCorrect = true;
+
+            for (int i = 0; i < ColourOrder.COLOUR_ORDER.Length; i++)
+            {
+                List<Segment> segs = cube.GetAll(ColourOrder.COLOUR_ORDER[i]);
+                
+                if(segs.Count != CubeStructure.SEGMENTS_PER_SIDE)
+                {
+                    allCorrect = false;
+                    break;
+                }
+
+                foreach(Segment segment in segs)
+                {
+                    if(!segment.IsOnSide(ColourOrder.COLOUR_ORDER[i]))
+                    {
+                        allCorrect = false;
+                        break;
+                    }
+                }
+            }
+
+            Assert.IsTrue(allCorrect);
+        }
+
+
     }
 }

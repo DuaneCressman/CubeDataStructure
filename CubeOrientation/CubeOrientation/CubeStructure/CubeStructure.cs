@@ -11,16 +11,20 @@ namespace CubeOrientation.CubeStructure
     /// </summary>
     public class CubeStructure
     {
-        private const int TOTAL_SEGMENTS = 26;
+        public const int TOTAL_SEGMENTS = 26;
+        public const int TOTAL_CORNER_SEGMENTS = 8;
+        public const int TOTAL_EDGE_SEGMENTS = 12;
+
+        public const int SEGMENTS_PER_SIDE = 9;
 
         private enum ColourOrder
         {
-            W,
-            Y,
-            R,
-            O,
-            B,
-            G
+            W, //x = 2
+            Y, //x = 0
+            R, //y = 2
+            O, //y = 0
+            B, //z = 2
+            G  //z = 0
         };
 
         private enum Plane
@@ -33,7 +37,14 @@ namespace CubeOrientation.CubeStructure
             Z
         };
 
-        public delegate object StructureDelegate(Segment segment);
+        public enum SegmentSubSets
+        {
+            All,
+            Edges,
+            Corners
+        }
+
+        public delegate bool segmentChecked(Segment segment);
 
         private Segment[,,] structure;
 
@@ -42,50 +53,122 @@ namespace CubeOrientation.CubeStructure
             structure = new Segment[3, 3, 3];
         }
 
+        #region Get Segments
+
         /// <summary>
-        /// Run a delegate on all the <see cref="Segment"/>s in the cube.
-        /// The delegate will return a value. The amount of times the value 
-        /// equals the expectedValue is returned from this method.
+        /// Get all the segments that are on the side of the cube that is passed in.
         /// </summary>
-        /// <param name="func">The delegate to run on each segment</param>
-        /// <param name="expectedValue">The value that is being looked for</param>
-        /// <returns></returns>
-        public int CheckSegmentReturnValue(StructureDelegate func, object expectedValue)
+        public List<Segment> GetSegments(char side)
         {
-            int foundValues = 0;
+            return GetSegments((_) => { return true; }, side);
+        }
 
-            for (int x = 0; x < Cube.SIZE; x++)
+        /// <summary>
+        /// Get all the segments on the side passed in that pass delegate passed in.
+        /// </summary>
+        /// <param name="segmentChecked">The condition for if a segments should be returned.</param>
+        /// <param name="side">This side of the cube check the segments on.</param>
+        public List<Segment> GetSegments(segmentChecked segmentChecked, char side)
+        {
+            List<Segment> output = new List<Segment>();
+
+            int xStart = 0, yStart = 0, zStart = 0;
+            int xMax = Cube.SIZE, yMax= Cube.SIZE, zMax= Cube.SIZE;
+
+            switch (side)
             {
-                for (int y = 0; y < Cube.SIZE; y++)
-                {
-                    for (int z = 0; z < Cube.SIZE; z++)
-                    {
-                        if (x == 1 && y == 1 && z == 1)
-                        {
-                            continue;
-                        }
+                case 'W':
+                    xStart = 2;
+                    break;
 
-                        if (func(structure[x, y, z]) == expectedValue)
+                case 'Y':
+                    xStart = 0;
+                    xMax = 1;
+                    break;
+
+                case 'R':
+                    yStart = 2;
+                    break;
+
+                case 'O':
+                    yStart = 0;
+                    yMax = 1;
+                    break;
+
+                case 'B':
+                    zStart = 2;
+                    break;
+
+                case 'G':
+                    zStart = 0;
+                    zMax = 1;
+                    break;
+            }
+        
+            for (int x = xStart; x < xMax; x++)
+            {
+                for (int y = yStart; y < yMax; y++)
+                {
+                    for (int z = zStart; z < zMax; z++)
+                    {
+                        if (segmentChecked(structure[x, y, z]))
                         {
-                            foundValues++;
+                            output.Add(structure[x, y, z]);
                         }
                     }
                 }
             }
 
-            return foundValues;
+            return output;
         }
 
         /// <summary>
-        /// Set the <see cref="Segment"/> that is at a specific location in the cube.
+        /// Get segments based on their type. (corner segment, edge segment, or just all the segments)
         /// </summary>
-        /// <param name="segment">The segment to place in the cube</param>
-        /// <param name="pathName">The path name for the location in the cube.</param>
-        public void SetSegment(Segment segment, params char[] pathName)
+        public List<Segment> GetSegments(SegmentSubSets subset = SegmentSubSets.All)
         {
-            (int x, int y, int z) coordinates = GetPath(pathName);
+            return GetSegments((_) => { return true; }, subset);
+        }
 
-            structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1] = segment;
+        /// <summary>
+        /// Get segments base on their type that pass the delegate passed in.
+        /// </summary>
+        /// <param name="segmentChecked">The condition for if a segments should be returned.</param>
+        /// <param name="subset">The type of segments to check</param>
+        public List<Segment> GetSegments(segmentChecked segmentChecked, SegmentSubSets subset = SegmentSubSets.All)
+        {
+            List<Segment> output = new List<Segment>();
+
+            int itarator = subset == SegmentSubSets.Corners ? 2 : 1;
+
+            for (int x = 0; x < Cube.SIZE; x += itarator)
+            {
+                for (int y = 0; y < Cube.SIZE; y += itarator)
+                {
+                    for (int z = 0; z < Cube.SIZE; z += itarator)
+                    {
+                        if (subset != SegmentSubSets.Corners)
+                        {
+                            if (x == 1 && y == 1 && z == 1)
+                            {
+                                continue;
+                            }
+
+                            if(subset == SegmentSubSets.Edges && (x + y + z) % 2 == 0)
+                            {
+                                continue;
+                            }
+                        }
+
+                        if (segmentChecked(structure[x, y, z]))
+                        {
+                            output.Add(structure[x, y, z]);
+                        }
+                    }
+                }
+            }
+
+            return output;
         }
 
         /// <summary>
@@ -99,6 +182,22 @@ namespace CubeOrientation.CubeStructure
 
             return structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1];
         }
+
+        #endregion
+
+        /// <summary>
+        /// Set the <see cref="Segment"/> that is at a specific location in the cube.
+        /// </summary>
+        /// <param name="segment">The segment to place in the cube</param>
+        /// <param name="pathName">The path name for the location in the cube.</param>
+        public void SetSegment(Segment segment, params char[] pathName)
+        {
+            (int x, int y, int z) coordinates = GetPath(pathName);
+
+            structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1] = segment;
+        }
+
+        
 
         /// <summary>
         /// Get all the possible path names for a 3x3x3 cube. This should only be used for 

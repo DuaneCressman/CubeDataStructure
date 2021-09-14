@@ -4,7 +4,6 @@ using static CubeOrientation.ColourOrder;
 
 namespace CubeOrientation.CubeStructure
 {
-
     /// <summary>
     /// This class has functionality to hold, rotates, and get face colours for 
     /// a cube. The actual data is stored in a <see cref="CubeStructure"/>.
@@ -34,11 +33,7 @@ namespace CubeOrientation.CubeStructure
         {
             get
             {
-                CubeStructure.StructureDelegate segmentIsSolved = (seg) => { return seg.Solved; };
-
-                int unsolvedSegments = structure.CheckSegmentReturnValue(segmentIsSolved, false);
-
-                return unsolvedSegments == 0;
+                return structure.GetSegments((s) => { return !s.Solved; }).Count == 0;
             }
         }
 
@@ -67,6 +62,10 @@ namespace CubeOrientation.CubeStructure
 
         #region Rotation
 
+        /// <summary>
+        /// Rotate multiple slices in order. 
+        /// The formate should be like "W R' B G W' W' O B Y". An ' is used to denote an counter clockwise rotation.
+        /// </summary>
         public void RotateSlices(string input)
         {
             input = input.Replace(" ", string.Empty);
@@ -86,6 +85,11 @@ namespace CubeOrientation.CubeStructure
             }
         }
 
+        /// <summary>
+        /// Rotate all the segments on one side of the cube.
+        /// </summary>
+        /// <param name="slice">The slice of the cube to rotate. Use 'x', 'y', 'z' to rotate the middle slices.</param>
+        /// <param name="clockwise">True -> Clockwise, False -> Counter Clockwise</param>
         public void RotateSlice(char slice, bool clockwise)
         {
             if (COLOUR_ORDER.GetIndex(slice) != -1)

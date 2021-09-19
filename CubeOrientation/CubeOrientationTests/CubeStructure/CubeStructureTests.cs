@@ -65,8 +65,8 @@ namespace CubeOrientation.CubeStructure.Tests
 
             cube.RotateSlices("R R G' Y' W");
 
-            char[,] redFaces = cube.GetFacesOnSide('R', 'W');
-            char[,] whiteFaces = cube.GetFacesOnSide('W', 'B');
+            char[,] redFaces = cube.GetFacesOnSideToPrint('R', 'W');
+            char[,] whiteFaces = cube.GetFacesOnSideToPrint('W', 'B');
 
             char[,] correctRedFaces = new char[3, 3]
             {
@@ -215,7 +215,7 @@ namespace CubeOrientation.CubeStructure.Tests
 
             for (int i = 0; i < ColourOrder.COLOUR_ORDER.Length; i++)
             {
-                List<Segment> segs = cube.GetAll(ColourOrder.COLOUR_ORDER[i]);
+                List<Segment> segs = cube.Structure.GetSegments(ColourOrder.COLOUR_ORDER[i]);
                 
                 if(segs.Count != CubeStructure.SEGMENTS_PER_SIDE)
                 {
@@ -236,6 +236,47 @@ namespace CubeOrientation.CubeStructure.Tests
             Assert.IsTrue(allCorrect);
         }
 
+        [TestMethod()]
+        public void DirectionsAreCorrect()
+        {
+            bool allCorrect = true;
 
+            char[] correctSides = { 'R', 'O', 'B', 'G', 'W', 'Y' };
+
+            for (int i = 0; i < ColourOrder.DIRECTIONS.Length; i++)
+            {
+                if(ColourOrder.GetSideFromDirection('R', 'W', ColourOrder.DIRECTIONS[i]) != correctSides[i])
+                {
+                    allCorrect = false;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(allCorrect);
+        }
+
+        [TestMethod()]
+        public void GettingFacesByDirections()
+        {
+            Cube cube = new Cube();
+
+            cube.RotateSlices("f u l' u b d' r r f'", 'R', 'W');
+
+            string[] faces = { "ubr", "fl", "dfr", "bd" };
+            char[] correctColours = { 'O', 'R', 'R', 'O' };
+
+            bool allCorrect = true;
+
+            for (int i = 0; i < faces.Length; i++)
+            {
+                if(cube.GetFaceColour(faces[i], 'W', 'R') != correctColours[i])
+                {
+                    allCorrect = false;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(allCorrect);
+        }
     }
 }

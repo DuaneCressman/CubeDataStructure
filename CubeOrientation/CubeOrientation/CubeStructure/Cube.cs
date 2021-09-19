@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using static CubeOrientation.ColourOrder;
+using static CubeOrientation.CubeStructure.CubeStructure;
 
 namespace CubeOrientation.CubeStructure
 {
@@ -86,6 +87,35 @@ namespace CubeOrientation.CubeStructure
         }
 
         /// <summary>
+        /// Rotate slices of the cube using <see cref="ColourOrder.DIRECTIONS"/>.
+        /// </summary>
+        /// <remarks>
+        /// Only directions can be used in the input string. Side colours can not be mixed in.
+        /// </remarks>
+        /// <param name="input">The directions of sides to rotate.</param>
+        /// <param name="front">The colour of the side at the front of the cube.</param>
+        /// <param name="top">The colour of the side at the top of the cube.</param>
+        public void RotateSlices(string input, char front, char top)
+        {
+            string sidesToRotate = string.Empty;
+
+            char[] directions = input.Replace(" ", string.Empty).ToCharArray();
+
+            for(int i = 0; i < directions.Length; i++)
+            {
+                if(directions[i] == '\'')
+                {
+                    sidesToRotate += '\'';
+                    continue;
+                }
+
+                sidesToRotate += GetSideFromDirection(front, top, directions[i]); 
+            }
+
+            RotateSlices(sidesToRotate);
+        }
+
+        /// <summary>
         /// Rotate all the segments on one side of the cube.
         /// </summary>
         /// <param name="slice">The slice of the cube to rotate. Use 'x', 'y', 'z' to rotate the middle slices.</param>
@@ -161,7 +191,73 @@ namespace CubeOrientation.CubeStructure
 
         #endregion
 
-        #region Face Colours
+        #region Get Segments
+
+        /// <summary>
+        /// Get segments that have the specified colour.
+        /// </summary>
+        /// <param name="colour">The colour on the segment to look for.</param>
+        /// <param name="subset">The type of segments to check.</param>
+        public List<Segment> GetSegmentsByColour(char colour, SegmentSubSets subset = SegmentSubSets.All)
+        {
+            return structure.GetSegments((s) => { return s.HasColour(colour);}, subset);
+        }
+
+        /// <summary>
+        /// Get segments that have the specified colour. Only check the segments on the specifed side.
+        /// </summary>
+        /// <param name="colour">The colour on the segment to look for.</param>
+        /// <param name="side">The side of the cube to check</param>
+        public List<Segment> GetSegmentsByColour(char colour, char side)
+        {
+            return structure.GetSegments((s) => { return s.HasColour(colour); }, side);
+        }
+
+        #endregion 
+
+        #region Get Face Colours
+
+        /// <summary>
+        /// Get the colour of a face on a segment using <see cref="ColourOrder.DIRECTIONS"/>.
+        /// </summary>
+        /// <param name="colourRefrenceDirection">The colour refrence for the face using directions</param>
+        /// <param name="front">The colour of the side at the front of the cube.</param>
+        /// <param name="top">The colour of the side at the top of the cube.</param>
+        /// <returns></returns>
+        public char GetFaceColour(string colourRefrenceDirection, char front, char top)
+        {
+            return GetFaceColour(colourRefrenceDirection.ToCharArray(), front, top);
+        }
+
+        /// <summary>
+        /// Get the colour of a face on a segment using <see cref="ColourOrder.DIRECTIONS"/>.
+        /// </summary>
+        /// <param name="colourRefrenceDirection">The colour refrence for the face using directions</param>
+        /// <param name="front">The colour of the side at the front of the cube.</param>
+        /// <param name="top">The colour of the side at the top of the cube.</param>
+        /// <returns></returns>
+        public char GetFaceColour(char[] colourRefrenceDirection, char front, char top)
+        {
+            char[] sides = new char[colourRefrenceDirection.Length];
+
+            for(int i = 0; i < colourRefrenceDirection.Length; i++)
+            {
+                sides[i] = GetSideFromDirection(front, top, colourRefrenceDirection[i]);
+            }
+
+            return GetFaceColour(sides);
+        }
+
+        /// <summary>
+        /// Get the colour of single face on the cube.
+        /// The <param name="colourRefrence"> is used to find the segment on the cube.
+        /// The first element in the <param name="colourRefrence"> determines which side of 
+        /// segment is used.
+        /// </summary>
+        public char GetFaceColour(string colourRefrence)
+        {
+            return GetFaceColour(colourRefrence.ToCharArray());
+        }
 
         /// <summary>
         /// Get the colour of single face on the cube.
@@ -181,12 +277,35 @@ namespace CubeOrientation.CubeStructure
         }
 
         /// <summary>
+        /// Get all the colours of the faces on a side of the cube.
+        /// The order of the colours is random.
+        /// </summary>
+        /// <param name="side">The side of the cube to get the face colours of.</param>
+        /// <returns>The colours of all the faces on the given side.</returns>
+        public char[] GetFaceColoursOnSide(char side)
+        {
+            char[] output = new char[SEGMENTS_PER_SIDE];
+
+            List<Segment> segmentsOnSide = structure.GetSegments(side);
+
+            for(int i = 0; i < segmentsOnSide.Count; i++)
+            {
+                output[i] = segmentsOnSide[i].colours[segmentsOnSide[i].location.GetIndex(side)];
+            }
+
+            return output;
+        }
+
+        /// <summary>
         /// Get the all the colours on one side of cube.
         /// </summary>
+        /// <remarks>
+        /// This method should only be used for testing purposes. 
+        /// </remarks>
         /// <param name="sideColour">The side of the cube to get the colours on.</param>
         /// <param name="topColour">The colour at the top of the cube.</param>
         /// <returns>All the colours on the face. (0,0) is bottom left, (2, 2) is top right.</returns>
-        public char[,] GetFacesOnSide(char sideColour, char topColour)
+        public char[,] GetFacesOnSideToPrint(char sideColour, char topColour)
         {
             //get the colours that will be used to define the colour references
             char[] adjacentColours = new char[ROTATION_ORDER_LENGTH];
@@ -242,7 +361,7 @@ namespace CubeOrientation.CubeStructure
 
             string output = string.Empty;
 
-            char[,] red = GetFacesOnSide('R', 'Y');
+            char[,] red = GetFacesOnSideToPrint('R', 'Y');
 
             for (int y = SIZE - 1; y >= 0; y--)
             {
@@ -260,10 +379,10 @@ namespace CubeOrientation.CubeStructure
 
             List<char[,]> middleColours = new List<char[,]>()
             {
-                GetFacesOnSide('B', 'R'),
-                GetFacesOnSide('W', 'R'),
-                GetFacesOnSide('G', 'R'),
-                GetFacesOnSide('Y', 'R')
+                GetFacesOnSideToPrint('B', 'R'),
+                GetFacesOnSideToPrint('W', 'R'),
+                GetFacesOnSideToPrint('G', 'R'),
+                GetFacesOnSideToPrint('Y', 'R')
             };
 
             for (int y = SIZE - 1; y >= 0; y--)
@@ -284,7 +403,7 @@ namespace CubeOrientation.CubeStructure
             output += "\n";
 
 
-            char[,] orange = GetFacesOnSide('O', 'W');
+            char[,] orange = GetFacesOnSideToPrint('O', 'W');
 
             for (int y = SIZE - 1; y >= 0; y--)
             {

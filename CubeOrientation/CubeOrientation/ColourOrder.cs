@@ -35,6 +35,13 @@ namespace CubeOrientation
         public static readonly char[] COLOUR_ORDER = { 'W', 'Y', 'R', 'O', 'B', 'G' };
 
         /// <summary>
+        /// These are the "directions" that can be used to specify a side. For these
+        /// directions to be used, the orintation of the cube must be known. The front
+        /// and top side are given.
+        /// </summary>
+        public static readonly char[] DIRECTIONS = { 'f', 'b', 'r', 'l', 'u', 'd' };
+
+        /// <summary>
         /// Get a colour in a rotation order for a specific side of the cube.
         /// </summary>
         /// <param name="sideColour">The side that the colours are rotated around</param>
@@ -96,6 +103,47 @@ namespace CubeOrientation
             }
 
             return rotationOrder[index];
+        }
+
+        /// <summary>
+        /// Get the side colour based on a direction.
+        /// The orientation of the cube must be given.
+        /// </summary>
+        /// <param name="front">The colour of the side at the front of the cube.</param>
+        /// <param name="top">The colour of the side at the top of the cube.</param>
+        /// <param name="direction">The direction of the side you want. See <see cref="DIRECTIONS"/> for valid directions.</param>
+        /// <returns>The colour of the side on the direction passed in.</returns>
+        public static char GetSideFromDirection(char front, char top, char direction)
+        {
+            return direction switch
+            {
+                'f' => front,
+                'b' => GetOppositeColour(front),
+                'r' => RotateColour(front, top, 1),
+                'l' => RotateColour(front, top, -1),
+                'u' => top,
+                'd' => RotateColour(front, top, 2),
+                _ => throw new Exception($"{direction} is not a valid direction"),
+            };
+        }
+
+        /// <summary>
+        /// Get the colour on the oposit side of the cube of the side passed in.
+        /// </summary>
+        /// <param name="colour">The colour you want the oposit colour of.</param>
+        /// <returns>The oposit colour of the colour passes in.</returns>
+        public static char GetOppositeColour(char colour)
+        {
+            int index = COLOUR_ORDER.GetIndex(colour);
+
+            if(index == -1)
+            {
+                throw new Exception($"{colour} is invalid");
+            }
+
+            int offset = index % 2 == 0 ? 1 : -1;
+
+            return COLOUR_ORDER[index + offset];
         }
     }
 }

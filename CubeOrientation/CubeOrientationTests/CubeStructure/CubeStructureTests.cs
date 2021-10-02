@@ -278,5 +278,53 @@ namespace CubeOrientation.CubeStructure.Tests
 
             Assert.IsTrue(allCorrect);
         }
+
+        [TestMethod()]
+        public void SortEdgesToASide()
+        {
+            string[] scrambles = new string[]
+            {
+                ("R G R' G B"),
+                ("G G R' B R"),
+                ("Y G' O' B Y"),
+                ("B O R W Y'"),
+                ("R R W' W W")
+            };
+
+            string[] correctEdgeOrder = new string[]
+            {
+                ("BGRO"),
+                ("GBRO"),
+                ("BOGR"),
+                ("ORBG"),
+                ("RBGO")
+            };
+
+            bool allEdgeOrdersWereCorrect = true;
+
+            for(int i = 0; i < scrambles.Length; i++)
+            {
+                Cube cube = new Cube();
+
+                cube.RotateSlices(scrambles[i]);
+
+                Dictionary<Segment, int> edges = EdgeSorter.SortEdges(cube, 'W', 'Y');
+                string orderOfEdges = string.Empty;
+
+                foreach (Segment segment in edges.Keys)
+                {
+                    //we know white will always come first, so choose the other colour.
+                    orderOfEdges += segment.faceColours[1];    
+                }
+
+                if(orderOfEdges != correctEdgeOrder[i])
+                {
+                    allEdgeOrdersWereCorrect = false;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(allEdgeOrdersWereCorrect);
+        }
     }
 }

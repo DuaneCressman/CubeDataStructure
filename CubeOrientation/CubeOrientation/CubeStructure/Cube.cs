@@ -101,15 +101,15 @@ namespace CubeOrientation.CubeStructure
 
             char[] directions = input.Replace(" ", string.Empty).ToCharArray();
 
-            for(int i = 0; i < directions.Length; i++)
+            for (int i = 0; i < directions.Length; i++)
             {
-                if(directions[i] == '\'')
+                if (directions[i] == '\'')
                 {
                     sidesToRotate += '\'';
                     continue;
                 }
 
-                sidesToRotate += GetSideFromDirection(front, top, directions[i]); 
+                sidesToRotate += GetSideFromDirection(front, top, directions[i]);
             }
 
             RotateSlices(sidesToRotate);
@@ -200,7 +200,7 @@ namespace CubeOrientation.CubeStructure
         /// <param name="subset">The type of segments to check.</param>
         public List<Segment> GetSegmentsByColour(char colour, SegmentSubSets subset = SegmentSubSets.All)
         {
-            return structure.GetSegments((s) => { return s.HasColour(colour);}, subset);
+            return structure.GetSegments((s) => { return s.HasFaceColour(colour); }, subset);
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace CubeOrientation.CubeStructure
         /// <param name="side">The side of the cube to check</param>
         public List<Segment> GetSegmentsByColour(char colour, char side)
         {
-            return structure.GetSegments((s) => { return s.HasColour(colour); }, side);
+            return structure.GetSegments((s) => { return s.HasFaceColour(colour); }, side);
         }
 
         #endregion 
@@ -240,7 +240,7 @@ namespace CubeOrientation.CubeStructure
         {
             char[] sides = new char[colourRefrenceDirection.Length];
 
-            for(int i = 0; i < colourRefrenceDirection.Length; i++)
+            for (int i = 0; i < colourRefrenceDirection.Length; i++)
             {
                 sides[i] = GetSideFromDirection(front, top, colourRefrenceDirection[i]);
             }
@@ -273,7 +273,25 @@ namespace CubeOrientation.CubeStructure
 
             int index = segment.location.GetIndex(face);
 
-            return segment.colours[index];
+            return segment.faceColours[index];
+        }
+
+        /// <summary>
+        /// Get the colour of single face on the cube, and the segment it's on.
+        /// The <param name="colourRefrence"> is used to find the segment on the cube
+        /// in the that location.
+        /// The first element in the <param name="colourRefrence"> determines which side of 
+        /// segment is used.
+        /// </summary>
+        public (char faceColour, Segment) GetSegmentByFaceColour(params char[] colourRefrence)
+        {
+            char face = colourRefrence[0];
+
+            Segment segment = structure.GetSegment(colourRefrence);
+
+            int index = segment.location.GetIndex(face);
+
+            return (segment.faceColours[index], segment);
         }
 
         /// <summary>
@@ -290,7 +308,7 @@ namespace CubeOrientation.CubeStructure
 
             for(int i = 0; i < segmentsOnSide.Count; i++)
             {
-                output[i] = segmentsOnSide[i].colours[segmentsOnSide[i].location.GetIndex(side)];
+                output[i] = segmentsOnSide[i].faceColours[segmentsOnSide[i].location.GetIndex(side)];
             }
 
             return output;

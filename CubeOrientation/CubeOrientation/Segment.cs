@@ -20,7 +20,7 @@ namespace CubeOrientation
         /// <summary>
         /// The colours that are on the segment.
         /// </summary>
-        public char[] colours { get; private set; }
+        public char[] faceColours { get; private set; }
 
         /// <summary>
         /// If the segment is in the correct location.
@@ -31,7 +31,7 @@ namespace CubeOrientation
             {
                 for (int i = 0; i < location.Length; i++)
                 {
-                    if (location[i] != colours[i])
+                    if (location[i] != faceColours[i])
                     {
                         return false;
                     }
@@ -44,7 +44,7 @@ namespace CubeOrientation
         public Segment(char[] location, char[] colours)
         {
             this.location = location;
-            this.colours = colours;
+            this.faceColours = colours;
         }
 
         /// <summary>
@@ -53,10 +53,10 @@ namespace CubeOrientation
         public Segment(params char[] location)
         {
             this.location = new char[location.Length];
-            colours = new char[location.Length];
+            faceColours = new char[location.Length];
 
             location.CopyTo(this.location, 0);
-            location.CopyTo(colours, 0);
+            location.CopyTo(faceColours, 0);
         }
 
         /// <summary>
@@ -73,9 +73,9 @@ namespace CubeOrientation
         /// <summary>
         /// If the segment has the colour passed in.
         /// </summary>
-        public bool HasColour(char colour)
+        public bool HasFaceColour(char colour)
         {
-            return colours.GetIndex(colour) != -1;
+            return faceColours.GetIndex(colour) != -1;
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace CubeOrientation
         public override string ToString()
         {
             return $"\n" +
-                   $"   Piece: {new string(colours)} \n" +
+                   $"   Piece: {new string(faceColours)} \n" +
                    $"Location: {new string(location)}";
         }
     }

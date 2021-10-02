@@ -145,5 +145,20 @@ namespace CubeOrientation
 
             return COLOUR_ORDER[index + offset];
         }
+
+        /// <summary>
+        /// Get the colours that are around the center of the cube it 'head' was the top face.
+        /// Basically all the colours but 'head' and 'GetOppositeColour(head)' 
+        /// </summary>
+        public static char[] GetBeltColours(char head) => head switch
+        {
+            'W' => WRotationOrder,
+            'Y' => WRotationOrder,
+            'R' => RRotationOrder,
+            'O' => RRotationOrder,
+            'B' => BRotationOrder,
+            'G' => BRotationOrder,
+            _ => throw new Exception($"{head} is not a valid colour." )
+        };
     }
 }

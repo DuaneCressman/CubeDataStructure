@@ -73,7 +73,7 @@ namespace CubeOrientation.CubeStructure
             List<Segment> output = new List<Segment>();
 
             int xStart = 0, yStart = 0, zStart = 0;
-            int xMax = Cube.SIZE, yMax= Cube.SIZE, zMax= Cube.SIZE;
+            int xMax = Cube.SIZE, yMax = Cube.SIZE, zMax = Cube.SIZE;
 
             switch (side)
             {
@@ -104,7 +104,7 @@ namespace CubeOrientation.CubeStructure
                     zMax = 1;
                     break;
             }
-        
+
             for (int x = xStart; x < xMax; x++)
             {
                 for (int y = yStart; y < yMax; y++)
@@ -154,7 +154,7 @@ namespace CubeOrientation.CubeStructure
                                 continue;
                             }
 
-                            if(subset == SegmentSubSets.Edges && (x + y + z) % 2 == 0)
+                            if (subset == SegmentSubSets.Edges && (x + y + z) % 2 == 0)
                             {
                                 continue;
                             }
@@ -197,7 +197,7 @@ namespace CubeOrientation.CubeStructure
             structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1] = segment;
         }
 
-        
+
 
         /// <summary>
         /// Get all the possible path names for a 3x3x3 cube. This should only be used for 
@@ -382,6 +382,20 @@ namespace CubeOrientation.CubeStructure
 
             return GetSegmentsInSlice(plane, offset);
         }
+
+        /// <summary>
+        /// Get the slice that is between 'side' and the colour opposit 'side'. 
+        /// </summary>
+        public List<Segment> GetBeltSlice(char side) => side switch
+        {
+            'W' => GetSlice('x'),
+            'Y' => GetSlice('x'),
+            'R' => GetSlice('y'),
+            'O' => GetSlice('y'),
+            'B' => GetSlice('z'),
+            'G' => GetSlice('z'),
+            _ => throw new Exception($"{side} is not a valid side colour.")
+        };
 
         /// <summary>
         /// Get all the segments in a slice.

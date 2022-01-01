@@ -278,5 +278,21 @@ namespace CubeOrientation.CubeStructure.Tests
 
             Assert.IsTrue(allCorrect);
         }
+
+        [TestMethod]
+        public void RotateEntireCube()
+        {
+            char correctTop = 'G';
+            char correctFront = 'O';
+
+            Cube cube = new Cube();
+
+            cube.RotateWholeCube('x', false);
+            cube.RotateWholeCube('z', false);
+            cube.RotateWholeCube('y', true);
+            cube.RotateWholeCube('x', true);
+
+            Assert.IsTrue(cube.FrontColour == correctFront && cube.TopColour == correctTop);
+        }
     }
 }

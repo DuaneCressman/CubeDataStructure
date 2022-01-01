@@ -28,7 +28,7 @@ namespace CubeOrientation
 
             string rotationtions = "W R' B G W' W' O B Y";
 
-            Console.WriteLine($"Aplying rotations {rotationtions}\n");
+            Console.WriteLine($"Applying rotations {rotationtions}\n");
 
             cube.RotateSlices(rotationtions);
 

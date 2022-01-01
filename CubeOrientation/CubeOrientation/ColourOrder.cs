@@ -36,7 +36,7 @@ namespace CubeOrientation
 
         /// <summary>
         /// These are the "directions" that can be used to specify a side. For these
-        /// directions to be used, the orintation of the cube must be known. The front
+        /// directions to be used, the orientation of the cube must be known. The front
         /// and top side are given.
         /// </summary>
         public static readonly char[] DIRECTIONS = { 'f', 'b', 'r', 'l', 'u', 'd' };
@@ -128,10 +128,10 @@ namespace CubeOrientation
         }
 
         /// <summary>
-        /// Get the colour on the oposit side of the cube of the side passed in.
+        /// Get the colour on the opposite side of the cube of the side passed in.
         /// </summary>
-        /// <param name="colour">The colour you want the oposit colour of.</param>
-        /// <returns>The oposit colour of the colour passes in.</returns>
+        /// <param name="colour">The colour you want the opposite colour of.</param>
+        /// <returns>The opposite colour of the colour passes in.</returns>
         public static char GetOppositeColour(char colour)
         {
             int index = COLOUR_ORDER.GetIndex(colour);

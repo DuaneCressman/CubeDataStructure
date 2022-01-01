@@ -23,11 +23,20 @@ namespace CubeOrientation.CubeStructure
 
         public static readonly char[] PLANES = { 'x', 'y', 'z' };
 
+        //public static readonly Dictionary<char, string> SLICE_MOVES = new Dictionary<char, string>()
+        //{
+        //    {'M', "" }
+        //} 
+
         /// <summary>The data structure that holds all the segments.</summary>
         private CubeStructure structure;
 
         /// <summary>The data structure that holds all the segments.</summary>
         public CubeStructure Structure => structure;
+
+        public char TopColour { get; private set; } = 'W';
+
+        public char FrontColour { get; private set; } = 'G';
 
         /// <summary>If the cube is in a solved state.</summary>
         public bool Solved
@@ -53,7 +62,7 @@ namespace CubeOrientation.CubeStructure
         {
             structure = new CubeStructure();
 
-            foreach (char[] pathName in CubeStructure.GetAllPathNames())
+            foreach (char[] pathName in GetAllPathNames())
             {
                 structure.SetSegment(new Segment(pathName), pathName);
             }
@@ -109,7 +118,7 @@ namespace CubeOrientation.CubeStructure
                     continue;
                 }
 
-                sidesToRotate += GetSideFromDirection(front, top, directions[i]); 
+                sidesToRotate += GetSideFromDirection(FrontColour, TopColour, directions[i]); 
             }
 
             RotateSlices(sidesToRotate);
@@ -138,15 +147,13 @@ namespace CubeOrientation.CubeStructure
         }
 
         /// <summary>
-        /// Rotate a slice on the side of the cube the cube.
+        /// Rotate a slice on the side of the cube .
         /// </summary>
         /// <param name="slice">The colour of the side that is rotating</param>
         /// <param name="clockwise">True: clockwise. False: counter clockwise</param>
         private void RotateSideSlice(char slice, bool clockwise)
         {
-            List<Segment> segments = structure.GetSlice(slice);
-
-            foreach (Segment segment in segments)
+            foreach (Segment segment in structure.GetSlice(slice))
             {
                 segment.Rotate(slice, clockwise);
                 structure.SetSegment(segment, segment.location);
@@ -187,6 +194,33 @@ namespace CubeOrientation.CubeStructure
 
             RotateSideSlice(a, !clockwise);
             RotateSideSlice(b, clockwise);
+        }
+
+        public void RotateWholeCube(char reorientation, bool prime)
+        {
+            if(reorientation == 'x')
+            {
+                //rotate the entire cube on r
+
+                char rightSide = GetSideFromDirection(FrontColour, TopColour, 'r');
+
+                TopColour = RotateColour(rightSide, TopColour, prime ? 1 : -1);
+                FrontColour = RotateColour(rightSide, FrontColour, prime ? 1 : -1);
+            }
+            else if(reorientation == 'y')
+            {
+                //rotate the entire cube on u
+                FrontColour = RotateColour(TopColour, FrontColour, prime ? 1 : -1);
+            }
+            else if(reorientation == 'z')
+            {
+                //rotate the entire cube on F
+                TopColour = RotateColour(FrontColour, TopColour, prime ? 1 : -1);
+            }
+            else
+            {
+                //error
+            }
         }
 
         #endregion

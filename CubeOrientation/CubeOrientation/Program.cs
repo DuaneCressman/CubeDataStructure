@@ -10,15 +10,30 @@ namespace CubeOrientation
         {
             Cube cube = new Cube();
 
-            cube.RotateSlices("f u l' u b d' r r f'", 'R', 'W');
+            Console.WriteLine($"Front = {cube.FrontColour}, Top = {cube.TopColour}");
 
-            string[] faces = { "ubr", "fl", "dfr", "bd" };
-            char[] correctColours = { 'O', 'R', 'R', 'O' };
+            cube.RotateWholeCube('x', false);
+            cube.RotateWholeCube('z', false);
+            cube.RotateWholeCube('y', true);
+            cube.RotateWholeCube('x', true);
 
-            for(int i = 0; i < faces.Length; i++)
-            {
-                Console.WriteLine($"{faces[i]} = {cube.GetFaceColour(faces[i], 'W', 'R')}");
-            }
+
+
+
+            Console.WriteLine($"Front = {cube.FrontColour}, Top = {cube.TopColour}");
+
+            
+
+
+            //cube.RotateSlices("f u l' u b d' r r f'", 'R', 'W');
+
+            //string[] faces = { "ubr", "fl", "dfr", "bd" };
+            //char[] correctColours = { 'O', 'R', 'R', 'O' };
+
+            //for(int i = 0; i < faces.Length; i++)
+            //{
+            //    Console.WriteLine($"{faces[i]} = {cube.GetFaceColour(faces[i], 'W', 'R')}");
+            //}
 
         }
 
@@ -30,7 +45,7 @@ namespace CubeOrientation
 
             Console.WriteLine($"Applying rotations {rotationtions}\n");
 
-            cube.RotateSlices(rotationtions);
+            cube.MoveBySideColour(rotationtions);
 
             Console.WriteLine(cube);
         }

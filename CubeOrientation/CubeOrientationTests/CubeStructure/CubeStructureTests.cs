@@ -38,12 +38,12 @@ namespace CubeOrientation.CubeStructure.Tests
 
                     moves[i] = new Tuple<char, bool>(slice, clockwise);
 
-                    cube.RotateSlice(slice, clockwise);
+                    cube.Move(slice, clockwise);
                 }
 
                 for (int i = moveCount - 1; i >= 0; i--)
                 {
-                    cube.RotateSlice(moves[i].Item1, !moves[i].Item2);
+                    cube.Move(moves[i].Item1, !moves[i].Item2);
                 }
 
                 if (!cube.Solved)
@@ -63,7 +63,7 @@ namespace CubeOrientation.CubeStructure.Tests
         {
             Cube cube = new Cube();
 
-            cube.RotateSlices("R R G' Y' W");
+            cube.MoveBySideColour("R R G' Y' W");
 
             char[,] redFaces = cube.GetFacesOnSideToPrint('R', 'W');
             char[,] whiteFaces = cube.GetFacesOnSideToPrint('W', 'B');
@@ -123,7 +123,7 @@ namespace CubeOrientation.CubeStructure.Tests
         {
             Cube cube = new Cube();
 
-            cube.RotateSlices("W Y W G G B' O' R B");
+            cube.MoveBySideColour("W Y W G G B' O' R B");
 
             bool errorFound = false;
 
@@ -259,8 +259,9 @@ namespace CubeOrientation.CubeStructure.Tests
         public void GettingFacesByDirections()
         {
             Cube cube = new Cube();
+            cube.SetCubeOrientation('R', 'W');
 
-            cube.RotateSlices("f u l' u b d' r r f'", 'R', 'W');
+            cube.Move("f u l' u b d' r r f'");
 
             string[] faces = { "ubr", "fl", "dfr", "bd" };
             char[] correctColours = { 'O', 'R', 'R', 'O' };
@@ -287,10 +288,10 @@ namespace CubeOrientation.CubeStructure.Tests
 
             Cube cube = new Cube();
 
-            cube.RotateWholeCube('x', false);
-            cube.RotateWholeCube('z', false);
-            cube.RotateWholeCube('y', true);
             cube.RotateWholeCube('x', true);
+            cube.RotateWholeCube('z', true);
+            cube.RotateWholeCube('y', false);
+            cube.RotateWholeCube('x', false);
 
             Assert.IsTrue(cube.FrontColour == correctFront && cube.TopColour == correctTop);
         }

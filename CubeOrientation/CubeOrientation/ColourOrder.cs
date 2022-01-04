@@ -42,6 +42,16 @@ namespace CubeOrientation
         public static readonly char[] DIRECTIONS = { 'f', 'b', 'r', 'l', 'u', 'd' };
 
         /// <summary>
+        /// The notation for slice moves.
+        /// </summary>
+        public static readonly char[] SLICES = { 'm', 'e', 's' };
+
+        /// <summary>
+        /// The notation for rotating the entire cube.
+        /// </summary>
+        public static readonly char[] WHOLE_CUBE_ROTATIONS = { 'x', 'y', 'z' };
+
+        /// <summary>
         /// Get a colour in a rotation order for a specific side of the cube.
         /// </summary>
         /// <param name="sideColour">The side that the colours are rotated around</param>
@@ -144,6 +154,23 @@ namespace CubeOrientation
             int offset = index % 2 == 0 ? 1 : -1;
 
             return COLOUR_ORDER[index + offset];
+        }
+
+        /// <summary>
+        /// Returns is a side colour is valid.
+        /// Valid colours are defined as colours within the <see cref="COLOUR_ORDER"/>
+        /// </summary>
+        public static bool IsValidSideColour(params char[] colours)
+        {
+            foreach(char c in colours)
+            {
+                if(COLOUR_ORDER.GetIndex(c) == -1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

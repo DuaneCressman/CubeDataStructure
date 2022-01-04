@@ -21,8 +21,6 @@ namespace CubeOrientation.CubeStructure
             Left = 3
         }
 
-        public static readonly char[] PLANES = { 'x', 'y', 'z' };
-
         //public static readonly Dictionary<char, string> SLICE_MOVES = new Dictionary<char, string>()
         //{
         //    {'M', "" }
@@ -43,7 +41,7 @@ namespace CubeOrientation.CubeStructure
         {
             get
             {
-                return structure.GetSegments((s) => { return !s.Solved; }).Count == 0;
+                return structure.GetSegments((s) => !s.Solved).Count == 0;
             }
         }
 
@@ -73,10 +71,10 @@ namespace CubeOrientation.CubeStructure
         #region Rotation
 
         /// <summary>
-        /// Rotate multiple slices in order. 
+        /// Rotate multiple slices in order.
         /// The formate should be like "W R' B G W' W' O B Y". An ' is used to denote an counter clockwise rotation.
         /// </summary>
-        public void RotateSlices(string input)
+        public void MoveBySideColour(string input)
         {
             input = input.Replace(" ", string.Empty);
 
@@ -91,7 +89,7 @@ namespace CubeOrientation.CubeStructure
                     clockwise = false;
                 }
 
-                RotateSlice(slice, clockwise);
+                Move(slice, clockwise);
             }
         }
 
@@ -102,9 +100,7 @@ namespace CubeOrientation.CubeStructure
         /// Only directions can be used in the input string. Side colours can not be mixed in.
         /// </remarks>
         /// <param name="input">The directions of sides to rotate.</param>
-        /// <param name="front">The colour of the side at the front of the cube.</param>
-        /// <param name="top">The colour of the side at the top of the cube.</param>
-        public void RotateSlices(string input, char front, char top)
+        public void Move(string input)
         {
             string sidesToRotate = string.Empty;
 
@@ -121,29 +117,29 @@ namespace CubeOrientation.CubeStructure
                 sidesToRotate += GetSideFromDirection(FrontColour, TopColour, directions[i]); 
             }
 
-            RotateSlices(sidesToRotate);
+            MoveBySideColour(sidesToRotate);
         }
 
         /// <summary>
         /// Rotate all the segments on one side of the cube.
         /// </summary>
-        /// <param name="slice">The slice of the cube to rotate. Use 'x', 'y', 'z' to rotate the middle slices.</param>
+        /// <param name="layer">The layer of the cube to rotate.</param>
         /// <param name="clockwise">True -> Clockwise, False -> Counter Clockwise</param>
-        public void RotateSlice(char slice, bool clockwise)
+        public void Move(char layer, bool clockwise)
         {
-            if (COLOUR_ORDER.GetIndex(slice) != -1)
+            if (COLOUR_ORDER.GetIndex(layer) != -1)
             {
-                RotateSideSlice(slice, clockwise);
+                RotateSideLayer(layer, clockwise);
                 return;
             }
 
-            if (PLANES.GetIndex(slice) != -1)
+            if (SLICES.GetIndex(layer) != -1)
             {
-                RotateMiddleSlice(slice, clockwise);
+                RotateSlice(layer, clockwise);
                 return;
             }
 
-            throw new Exception($"{slice} is not a valid slice");
+            throw new Exception($"{layer} is not a valid slice");
         }
 
         /// <summary>
@@ -151,7 +147,7 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="slice">The colour of the side that is rotating</param>
         /// <param name="clockwise">True: clockwise. False: counter clockwise</param>
-        private void RotateSideSlice(char slice, bool clockwise)
+        private void RotateSideLayer(char slice, bool clockwise)
         {
             foreach (Segment segment in structure.GetSlice(slice))
             {
@@ -165,38 +161,35 @@ namespace CubeOrientation.CubeStructure
         /// This is done by rotating the side slices in the same plane so that
         /// the cube is in the same orientation as if the middle slice was rotated.
         /// </summary>
-        /// <param name="slice">The slice to rotate ('x', 'y', 'z')</param>
-        /// <param name="clockwise">Direction to rotate views from the base colour slice in the plane.</param>
-        private void RotateMiddleSlice(char slice, bool clockwise)
+        /// <param name="slice">The slice to rotate (w, e, s)</param>
+        /// <param name="prime">Direction to rotate views from the base colour slice in the plane.</param>
+        private void RotateSlice(char slice, bool prime)
         {
-            char a, b;
 
-            switch (slice)
+            //THIS WILL CALL RotateSideLayer and RotateWholeCube with clockwise incorrectly
+
+
+            if (slice == 'm')
             {
-                case 'x':
-                    a = 'W';
-                    b = 'Y';
-                    break;
-
-                case 'y':
-                    a = 'R';
-                    b = 'O';
-                    break;
-
-                case 'z':
-                    a = 'B';
-                    b = 'G';
-                    break;
-
-                default:
-                    throw new Exception($"{slice} is not a valid middle slice");
+                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'l'), !prime);
+                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'r'), prime);
+                RotateWholeCube('x', !prime);
             }
-
-            RotateSideSlice(a, !clockwise);
-            RotateSideSlice(b, clockwise);
+            else if(slice == 'e')
+            {
+                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'u'), prime);
+                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'd'), !prime);
+                RotateWholeCube('y', !prime);
+            }
+            else if(slice == 's')
+            {
+                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'f'), !prime);
+                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'b'), prime);
+                RotateWholeCube('z', prime);
+            }
         }
 
-        public void RotateWholeCube(char reorientation, bool prime)
+        public void RotateWholeCube(char reorientation, bool clockwise)
         {
             if(reorientation == 'x')
             {
@@ -204,23 +197,39 @@ namespace CubeOrientation.CubeStructure
 
                 char rightSide = GetSideFromDirection(FrontColour, TopColour, 'r');
 
-                TopColour = RotateColour(rightSide, TopColour, prime ? 1 : -1);
-                FrontColour = RotateColour(rightSide, FrontColour, prime ? 1 : -1);
+                TopColour = RotateColour(rightSide, TopColour, clockwise ? -1 : 1);
+                FrontColour = RotateColour(rightSide, FrontColour, clockwise ? -1 : 1);
             }
             else if(reorientation == 'y')
             {
                 //rotate the entire cube on u
-                FrontColour = RotateColour(TopColour, FrontColour, prime ? 1 : -1);
+                FrontColour = RotateColour(TopColour, FrontColour, clockwise ? -1 : 1);
             }
             else if(reorientation == 'z')
             {
                 //rotate the entire cube on F
-                TopColour = RotateColour(FrontColour, TopColour, prime ? 1 : -1);
+                TopColour = RotateColour(FrontColour, TopColour, clockwise ? -1 : 1);
             }
             else
             {
                 //error
             }
+        }
+
+        /// <summary>
+        /// Manually set the orientation of the cube.
+        /// </summary>
+        /// <param name="frontColour"></param>
+        /// <param name="topColour"></param>
+        public void SetCubeOrientation(char frontColour, char topColour)
+        {
+            if(!IsValidSideColour(frontColour, topColour))
+            {
+                throw new Exception($"Either {frontColour} or {topColour} is not a valid side colour");
+            }
+
+            FrontColour = frontColour;
+            TopColour = topColour;
         }
 
         #endregion

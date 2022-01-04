@@ -17,15 +17,15 @@ namespace CubeOrientation.CubeStructure
 
         public const int SEGMENTS_PER_SIDE = 9;
 
-        private enum ColourOrder
-        {
-            W, //x = 2
-            Y, //x = 0
-            R, //y = 2
-            O, //y = 0
-            B, //z = 2
-            G  //z = 0
-        };
+        //private enum ColourOrder
+        //{
+        //    W, //x = 2
+        //    Y, //x = 0
+        //    R, //y = 2
+        //    O, //y = 0
+        //    B, //z = 2
+        //    G  //z = 0
+        //};
 
         private enum Plane
         {
@@ -60,7 +60,7 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         public List<Segment> GetSegments(char side)
         {
-            return GetSegments((_) => { return true; }, side);
+            return GetSegments((_) => true, side);
         }
 
         /// <summary>

@@ -8,17 +8,21 @@ namespace CubeOrientation
     {
         static void Main(string[] args)
         {
-            Cube cube = new Cube();
+            Console.WriteLine(Move.ValidAbstractMove("HI"));
+            Console.WriteLine(Move.ValidAbstractMove("u"));
+            Console.WriteLine(Move.ValidAbstractMove("r l u x q r'")); 
 
-            cube.RotateSlices("f u l' u b d' r r f'", 'R', 'W');
+            //Cube cube = new Cube();
 
-            string[] faces = { "ubr", "fl", "dfr", "bd" };
-            char[] correctColours = { 'O', 'R', 'R', 'O' };
+            //cube.RotateSlices("f u l' u b d' r r f'", 'R', 'W');
 
-            for(int i = 0; i < faces.Length; i++)
-            {
-                Console.WriteLine($"{faces[i]} = {cube.GetFaceColour(faces[i], 'W', 'R')}");
-            }
+            //string[] faces = { "ubr", "fl", "dfr", "bd" };
+            //char[] correctColours = { 'O', 'R', 'R', 'O' };
+
+            //for(int i = 0; i < faces.Length; i++)
+            //{
+            //    Console.WriteLine($"{faces[i]} = {cube.GetFaceColour(faces[i], 'W', 'R')}");
+            //}
 
         }
 

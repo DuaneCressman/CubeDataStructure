@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CubeOrientation.Notation;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -17,14 +18,14 @@ namespace CubeOrientation.CubeStructure
 
         public const int SEGMENTS_PER_SIDE = 9;
 
-        private enum ColourOrder
+        private static readonly Dictionary<FaceColours, V3Int> offsetByFaceColour = new Dictionary<FaceColours, V3Int>()
         {
-            W, //x = 2
-            Y, //x = 0
-            R, //y = 2
-            O, //y = 0
-            B, //z = 2
-            G  //z = 0
+            { FaceColours.W, new V3Int(1, 0, 0) },
+            { FaceColours.Y, new V3Int(-1, 0, 0) },
+            { FaceColours.R, new V3Int(0, 1, 0) },
+            { FaceColours.O, new V3Int(0, -1, 0) },
+            { FaceColours.B, new V3Int(0, 0, 1) },
+            { FaceColours.G, new V3Int(0, 0, -1) }
         };
 
         private enum Plane
@@ -58,7 +59,7 @@ namespace CubeOrientation.CubeStructure
         /// <summary>
         /// Get all the segments that are on the side of the cube that is passed in.
         /// </summary>
-        public List<Segment> GetSegments(char side)
+        public List<Segment> GetSegments(FaceColours side)
         {
             return GetSegments((_) => { return true; }, side);
         }
@@ -68,48 +69,24 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="segmentChecked">The condition for if a segments should be returned.</param>
         /// <param name="side">This side of the cube check the segments on.</param>
-        public List<Segment> GetSegments(segmentChecked segmentChecked, char side)
+        public List<Segment> GetSegments(segmentChecked segmentChecked, FaceColours side)
         {
             List<Segment> output = new List<Segment>();
 
-            int xStart = 0, yStart = 0, zStart = 0;
-            int xMax = Cube.SIZE, yMax= Cube.SIZE, zMax= Cube.SIZE;
+            V3Int offset = offsetByFaceColour[side];
+            V3Int start = offset + offset.Simplified;
+            V3Int max = new V3Int(Cube.SIZE, Cube.SIZE, Cube.SIZE);
 
-            switch (side)
+            if(ColourOrder.IsSecondaryColour(side))
             {
-                case 'W':
-                    xStart = 2;
-                    break;
-
-                case 'Y':
-                    xStart = 0;
-                    xMax = 1;
-                    break;
-
-                case 'R':
-                    yStart = 2;
-                    break;
-
-                case 'O':
-                    yStart = 0;
-                    yMax = 1;
-                    break;
-
-                case 'B':
-                    zStart = 2;
-                    break;
-
-                case 'G':
-                    zStart = 0;
-                    zMax = 1;
-                    break;
+                max += offset.Simplified * -2;
             }
         
-            for (int x = xStart; x < xMax; x++)
+            for (int x = start.x; x < max.x; x++)
             {
-                for (int y = yStart; y < yMax; y++)
+                for (int y = start.y; y < max.y; y++)
                 {
-                    for (int z = zStart; z < zMax; z++)
+                    for (int z = start.z; z < max.z; z++)
                     {
                         if (segmentChecked(structure[x, y, z]))
                         {
@@ -127,7 +104,7 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         public List<Segment> GetSegments(SegmentSubSets subset = SegmentSubSets.All)
         {
-            return GetSegments((_) => { return true; }, subset);
+            return GetSegments((_) => true, subset);
         }
 
         /// <summary>
@@ -176,9 +153,9 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="pathName">The path name for the segment.</param>
         /// <returns>The segment at the specified location.</returns>
-        public Segment GetSegment(char[] pathName)
+        public Segment GetSegment(FaceColours[] pathName)
         {
-            (int x, int y, int z) coordinates = GetPath(pathName);
+            V3Int coordinates = GetPath(pathName);
 
             return structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1];
         }
@@ -190,22 +167,20 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="segment">The segment to place in the cube</param>
         /// <param name="pathName">The path name for the location in the cube.</param>
-        public void SetSegment(Segment segment, params char[] pathName)
+        public void SetSegment(Segment segment, params FaceColours[] pathName)
         {
-            (int x, int y, int z) coordinates = GetPath(pathName);
+            V3Int coordinates = GetPath(pathName);
 
             structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1] = segment;
         }
-
-        
 
         /// <summary>
         /// Get all the possible path names for a 3x3x3 cube. This should only be used for 
         /// setting up the cube.
         /// </summary>
-        public static char[][] GetAllPathNames()
+        public static FaceColours[][] GetAllPathNames()
         {
-            char[][] output = new char[TOTAL_SEGMENTS][];
+            FaceColours[][] output = new FaceColours[TOTAL_SEGMENTS][];
 
             int index = 0;
 
@@ -220,7 +195,7 @@ namespace CubeOrientation.CubeStructure
                             continue;
                         }
 
-                        output[index] = GetPathName(x, y, z);
+                        output[index] = GetPathName(new V3Int(x, y, z));
 
                         index++;
                     }
@@ -233,42 +208,30 @@ namespace CubeOrientation.CubeStructure
         /// <summary>
         /// Get the path name for a coordinate path.
         /// </summary>
-        /// <param name="x">The x value of the coordinate.</param>
-        /// <param name="y">The y value of the coordinate.</param>
-        /// <param name="z">The x value of the coordinate.</param>
+        /// <param coordinates="x">The coordinates</param>
         /// <returns>The path to this location in the cube.</returns>
-        private static char[] GetPathName(int x, int y, int z)
+        private static FaceColours[] GetPathName(V3Int coordinates)
         {
-            string s = string.Empty;
+            List<FaceColours> faces = new List<FaceColours>();
 
-            if (x == 1)
+            foreach(FaceColours colour in offsetByFaceColour.Keys)
             {
-                s += 'W';
-            }
-            else if (x == -1)
-            {
-                s += 'Y';
-            }
+                V3Int current = offsetByFaceColour[colour];
 
-            if (y == 1)
-            {
-                s += 'R';
-            }
-            else if (y == -1)
-            {
-                s += 'O';
-            }
+                if(coordinates.x == current.x ||
+                   coordinates.y == current.y ||
+                   coordinates.z == current.z )
+                {
+                    faces.Add(colour);
+                }
 
-            if (z == 1)
-            {
-                s += 'B';
-            }
-            else if (z == -1)
-            {
-                s += 'G';
+                if(faces.Count == 3)
+                {
+                    break;
+                }
             }
 
-            return s.ToCharArray();
+            return faces.ToArray();
         }
 
         /// <summary>
@@ -276,46 +239,16 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="pathName">The path name of location.</param>
         /// <returns>The path coordinates for the given path name.</returns>
-        private static (int x, int y, int z) GetPath(char[] pathName)
+        private static V3Int GetPath(FaceColours[] pathName)
         {
-            int x = 0, y = 0, z = 0;
+            V3Int coordinates = new V3Int();
 
             for (int i = 0; i < pathName.Length; i++)
             {
-                if (pathName[i] == '\0')
-                {
-                    continue;
-                }
-
-                switch (pathName[i])
-                {
-                    case ('W'):
-                        x = 1;
-                        break;
-
-                    case ('Y'):
-                        x = -1;
-                        break;
-
-                    case ('R'):
-                        y = 1;
-                        break;
-
-                    case ('O'):
-                        y = -1;
-                        break;
-
-                    case ('B'):
-                        z = 1;
-                        break;
-
-                    case ('G'):
-                        z = -1;
-                        break;
-                }
+                coordinates += offsetByFaceColour[pathName[i]];
             }
 
-            return (x, y, z);
+            return coordinates;
         }
 
         /// <summary>

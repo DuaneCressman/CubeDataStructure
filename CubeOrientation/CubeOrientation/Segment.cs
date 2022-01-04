@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using CubeOrientation.Notation;
 
 namespace CubeOrientation
 {
@@ -15,12 +16,12 @@ namespace CubeOrientation
         /// The location of the segment on the cube.
         /// This is held by 2 chars for an edge, and 3 chars for a corner.
         /// </summary>
-        public char[] location { get; private set; }
+        public FaceColours[] location { get; private set; }
 
         /// <summary>
         /// The colours that are on the segment.
         /// </summary>
-        public char[] colours { get; private set; }
+        public FaceColours[] colours { get; private set; }
 
         /// <summary>
         /// If the segment is in the correct location.
@@ -41,19 +42,19 @@ namespace CubeOrientation
             }
         }
 
-        public Segment(char[] location, char[] colours)
+        public Segment(FaceColours[] location, FaceColours[] colours)
         {
             this.location = location;
             this.colours = colours;
         }
 
         /// <summary>
-        /// Creates the segment in the correct location.
+        /// Creates the segment in the correct location on the cube.
         /// </summary>
-        public Segment(params char[] location)
+        public Segment(params FaceColours[] location)
         {
-            this.location = new char[location.Length];
-            colours = new char[location.Length];
+            this.location = new FaceColours[location.Length];
+            colours = new FaceColours[location.Length];
 
             location.CopyTo(this.location, 0);
             location.CopyTo(colours, 0);
@@ -65,7 +66,7 @@ namespace CubeOrientation
         /// the side colour.
         /// </summary>
         /// <param name="sideColour">The colour of the side to check.</param>
-        public bool IsOnSide(char sideColour)
+        public bool IsOnSide(FaceColours sideColour)
         {
             return location.GetIndex(sideColour) != -1;
         }
@@ -73,7 +74,7 @@ namespace CubeOrientation
         /// <summary>
         /// If the segment has the colour passed in.
         /// </summary>
-        public bool HasColour(char colour)
+        public bool HasColour(FaceColours colour)
         {
             return colours.GetIndex(colour) != -1;
         }
@@ -83,11 +84,10 @@ namespace CubeOrientation
         /// The colours array will stay the same.
         /// The location array will be updated.
         /// </summary>
-        /// <param name="sideRotating">The side that is being rotated.</param>
-        /// <param name="clockwise">If the side is being rotated clockwise.</param>
-        public void Rotate(char sideRotating, bool clockwise)
+        /// <param name="move">The move that is rotating the segment</param>
+        public void Rotate(LiteralMove move)
         {
-            if (!IsOnSide(sideRotating))
+            if (!IsOnSide(move.Face))
             {
                 return;
             }
@@ -95,20 +95,28 @@ namespace CubeOrientation
             for (int i = 0; i < location.Length; i++)
             {
                 //The side that is on the cube doesn't change
-                if (location[i] == sideRotating)
+                if (location[i] == move.Face)
                 {
                     continue;
                 }
 
-                location[i] = ColourOrder.RotateColour(sideRotating, location[i], clockwise ? 1 : -1);
+                location[i] = ColourOrder.RotateColour(move.Face, location[i], move.Prime ? -1 : 1);
             }
         }
 
         public override string ToString()
         {
-            return $"\n" +
-                   $"   Piece: {new string(colours)} \n" +
-                   $"Location: {new string(location)}";
+            string colours = string.Empty, location = string.Empty;
+
+            for (int i = 0; i < colours.Length; i++)
+            {
+                colours += this.colours[i];
+                location += this.location[i];
+            }
+
+            return "\n" +
+                   $"   Piece: {colours} \n" +
+                   $"Location: {location}";
         }
     }
 }

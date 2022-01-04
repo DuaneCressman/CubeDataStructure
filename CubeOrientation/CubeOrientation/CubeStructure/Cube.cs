@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using static CubeOrientation.ColourOrder;
 using static CubeOrientation.CubeStructure.CubeStructure;
+using CubeOrientation.Notation;
 
 namespace CubeOrientation.CubeStructure
 {
@@ -198,17 +199,17 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="colour">The colour on the segment to look for.</param>
         /// <param name="subset">The type of segments to check.</param>
-        public List<Segment> GetSegmentsByColour(char colour, SegmentSubSets subset = SegmentSubSets.All)
+        public List<Segment> GetSegmentsByColour(FaceColours colour, SegmentSubSets subset = SegmentSubSets.All)
         {
-            return structure.GetSegments((s) => { return s.HasColour(colour);}, subset);
+            return structure.GetSegments((s) => s.HasColour(colour), subset);
         }
 
         /// <summary>
-        /// Get segments that have the specified colour. Only check the segments on the specifed side.
+        /// Get segments that have the specified colour. Only check the segments on the specified side.
         /// </summary>
         /// <param name="colour">The colour on the segment to look for.</param>
         /// <param name="side">The side of the cube to check</param>
-        public List<Segment> GetSegmentsByColour(char colour, char side)
+        public List<Segment> GetSegmentsByColour(FaceColours colour, FaceColours side)
         {
             return structure.GetSegments((s) => { return s.HasColour(colour); }, side);
         }

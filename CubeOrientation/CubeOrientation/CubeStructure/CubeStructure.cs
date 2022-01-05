@@ -1,4 +1,5 @@
-﻿using System;
+﻿using static CubeOrientation.Notation;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -17,24 +18,34 @@ namespace CubeOrientation.CubeStructure
 
         public const int SEGMENTS_PER_SIDE = 9;
 
-        //private enum ColourOrder
-        //{
-        //    W, //x = 2
-        //    Y, //x = 0
-        //    R, //y = 2
-        //    O, //y = 0
-        //    B, //z = 2
-        //    G  //z = 0
-        //};
+        private static readonly Dictionary<FaceColours, V3Int> offsetByFaceColour = new Dictionary<FaceColours, V3Int>()
+        {
+            { FaceColours.W, new V3Int(1, 0, 0) },
+            { FaceColours.Y, new V3Int(-1, 0, 0) },
+            { FaceColours.R, new V3Int(0, 1, 0) },
+            { FaceColours.O, new V3Int(0, -1, 0) },
+            { FaceColours.B, new V3Int(0, 0, 1) },
+            { FaceColours.G, new V3Int(0, 0, -1) }
+        };
 
         private enum Plane
         {
             /// <summary>Going from 'W' to 'Y'<summary>
-            X,
+            WY,
             /// <summary>Going from 'R' to 'O'<summary>
-            Y,
+            RO,
             /// <summary>Going from 'B' to 'G'<summary>
-            Z
+            BG
+        };
+
+        private static readonly Dictionary<FaceColours, Plane> planeByFaceColour = new Dictionary<FaceColours, Plane>()
+        {
+            { FaceColours.W, Plane.WY },
+            { FaceColours.Y, Plane.WY },
+            { FaceColours.R, Plane.RO },
+            { FaceColours.O, Plane.RO },
+            { FaceColours.B, Plane.BG },
+            { FaceColours.G, Plane.BG }
         };
 
         public enum SegmentSubSets
@@ -58,7 +69,7 @@ namespace CubeOrientation.CubeStructure
         /// <summary>
         /// Get all the segments that are on the side of the cube that is passed in.
         /// </summary>
-        public List<Segment> GetSegments(char side)
+        public List<Segment> GetSegments(FaceColours side)
         {
             return GetSegments((_) => true, side);
         }
@@ -68,48 +79,24 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="segmentChecked">The condition for if a segments should be returned.</param>
         /// <param name="side">This side of the cube check the segments on.</param>
-        public List<Segment> GetSegments(segmentChecked segmentChecked, char side)
+        public List<Segment> GetSegments(segmentChecked segmentChecked, FaceColours side)
         {
             List<Segment> output = new List<Segment>();
 
-            int xStart = 0, yStart = 0, zStart = 0;
-            int xMax = Cube.SIZE, yMax= Cube.SIZE, zMax= Cube.SIZE;
+            V3Int offset = offsetByFaceColour[side];
+            V3Int start = offset + offset.Simplified;
+            V3Int max = new V3Int(Cube.SIZE, Cube.SIZE, Cube.SIZE);
 
-            switch (side)
+            if(ColourOrder.IsSecondaryColour(side))
             {
-                case 'W':
-                    xStart = 2;
-                    break;
-
-                case 'Y':
-                    xStart = 0;
-                    xMax = 1;
-                    break;
-
-                case 'R':
-                    yStart = 2;
-                    break;
-
-                case 'O':
-                    yStart = 0;
-                    yMax = 1;
-                    break;
-
-                case 'B':
-                    zStart = 2;
-                    break;
-
-                case 'G':
-                    zStart = 0;
-                    zMax = 1;
-                    break;
+                max += offset.Simplified * -2;
             }
         
-            for (int x = xStart; x < xMax; x++)
+            for (int x = start.x; x < max.x; x++)
             {
-                for (int y = yStart; y < yMax; y++)
+                for (int y = start.y; y < max.y; y++)
                 {
-                    for (int z = zStart; z < zMax; z++)
+                    for (int z = start.z; z < max.z; z++)
                     {
                         if (segmentChecked(structure[x, y, z]))
                         {
@@ -127,7 +114,7 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         public List<Segment> GetSegments(SegmentSubSets subset = SegmentSubSets.All)
         {
-            return GetSegments((_) => { return true; }, subset);
+            return GetSegments((_) => true, subset);
         }
 
         /// <summary>
@@ -176,9 +163,9 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="pathName">The path name for the segment.</param>
         /// <returns>The segment at the specified location.</returns>
-        public Segment GetSegment(char[] pathName)
+        public Segment GetSegment(FaceColours[] pathName)
         {
-            (int x, int y, int z) coordinates = GetPath(pathName);
+            V3Int coordinates = GetPath(pathName);
 
             return structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1];
         }
@@ -190,22 +177,20 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="segment">The segment to place in the cube</param>
         /// <param name="pathName">The path name for the location in the cube.</param>
-        public void SetSegment(Segment segment, params char[] pathName)
+        public void SetSegment(Segment segment, params FaceColours[] pathName)
         {
-            (int x, int y, int z) coordinates = GetPath(pathName);
+            V3Int coordinates = GetPath(pathName);
 
             structure[coordinates.x + 1, coordinates.y + 1, coordinates.z + 1] = segment;
         }
-
-        
 
         /// <summary>
         /// Get all the possible path names for a 3x3x3 cube. This should only be used for 
         /// setting up the cube.
         /// </summary>
-        public static char[][] GetAllPathNames()
+        public static FaceColours[][] GetAllPathNames()
         {
-            char[][] output = new char[TOTAL_SEGMENTS][];
+            FaceColours[][] output = new FaceColours[TOTAL_SEGMENTS][];
 
             int index = 0;
 
@@ -220,7 +205,7 @@ namespace CubeOrientation.CubeStructure
                             continue;
                         }
 
-                        output[index] = GetPathName(x, y, z);
+                        output[index] = GetPathName(new V3Int(x, y, z));
 
                         index++;
                     }
@@ -233,42 +218,30 @@ namespace CubeOrientation.CubeStructure
         /// <summary>
         /// Get the path name for a coordinate path.
         /// </summary>
-        /// <param name="x">The x value of the coordinate.</param>
-        /// <param name="y">The y value of the coordinate.</param>
-        /// <param name="z">The x value of the coordinate.</param>
+        /// <param coordinates="x">The coordinates</param>
         /// <returns>The path to this location in the cube.</returns>
-        private static char[] GetPathName(int x, int y, int z)
+        private static FaceColours[] GetPathName(V3Int coordinates)
         {
-            string s = string.Empty;
+            List<FaceColours> faces = new List<FaceColours>();
 
-            if (x == 1)
+            foreach(FaceColours colour in offsetByFaceColour.Keys)
             {
-                s += 'W';
-            }
-            else if (x == -1)
-            {
-                s += 'Y';
-            }
+                V3Int current = offsetByFaceColour[colour];
 
-            if (y == 1)
-            {
-                s += 'R';
-            }
-            else if (y == -1)
-            {
-                s += 'O';
-            }
+                if(coordinates.x == current.x ||
+                   coordinates.y == current.y ||
+                   coordinates.z == current.z )
+                {
+                    faces.Add(colour);
+                }
 
-            if (z == 1)
-            {
-                s += 'B';
-            }
-            else if (z == -1)
-            {
-                s += 'G';
+                if(faces.Count == 3)
+                {
+                    break;
+                }
             }
 
-            return s.ToCharArray();
+            return faces.ToArray();
         }
 
         /// <summary>
@@ -276,118 +249,50 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="pathName">The path name of location.</param>
         /// <returns>The path coordinates for the given path name.</returns>
-        private static (int x, int y, int z) GetPath(char[] pathName)
+        private static V3Int GetPath(FaceColours[] pathName)
         {
-            int x = 0, y = 0, z = 0;
+            V3Int coordinates = new V3Int();
 
             for (int i = 0; i < pathName.Length; i++)
             {
-                if (pathName[i] == '\0')
-                {
-                    continue;
-                }
-
-                switch (pathName[i])
-                {
-                    case ('W'):
-                        x = 1;
-                        break;
-
-                    case ('Y'):
-                        x = -1;
-                        break;
-
-                    case ('R'):
-                        y = 1;
-                        break;
-
-                    case ('O'):
-                        y = -1;
-                        break;
-
-                    case ('B'):
-                        z = 1;
-                        break;
-
-                    case ('G'):
-                        z = -1;
-                        break;
-                }
+                coordinates += offsetByFaceColour[pathName[i]];
             }
 
-            return (x, y, z);
+            return coordinates;
         }
 
         /// <summary>
         /// Get all the segments from a slice in the cube.
         /// The slices on the sides can be referenced using the colour
         /// of the center on that side.
-        /// The middle slices can be gotten using:
-        /// 'x' => The middle slice without the 'W' and 'Y' centers.
-        /// 'y' => The middle slice without the 'R' and 'O' centers.
-        /// 'z' => The middle slice without the 'B' and 'G' centers.
         /// </summary>
-        public List<Segment> GetSlice(char slice)
+        public List<Segment> GetSideLayer(FaceColours layer)
         {
-            int offset = 0;
-            Plane plane;
-
-            switch (slice)
-            {
-                case ('W'):
-                    offset = 1;
-                    plane = Plane.X;
-                    break;
-
-                case ('Y'):
-                    offset = -1;
-                    plane = Plane.X;
-                    break;
-
-                case ('R'):
-                    offset = 1;
-                    plane = Plane.Y;
-                    break;
-
-                case ('O'):
-                    offset = -1;
-                    plane = Plane.Y;
-                    break;
-
-                case ('B'):
-                    offset = 1;
-                    plane = Plane.Z;
-                    break;
-
-                case ('G'):
-                    offset = -1;
-                    plane = Plane.Z;
-                    break;
-
-                case ('x'):
-                    plane = Plane.X;
-                    break;
-
-                case ('y'):
-                    plane = Plane.Y;
-                    break;
-
-                case ('z'):
-                    plane = Plane.Z;
-                    break;
-
-                default:
-                    throw new Exception($"The slice {slice} could not be found.");
-            }
+            int offset = ColourOrder.IsSecondaryColour(layer) ? -1 : 1;
+            Plane plane = planeByFaceColour[layer];
 
             return GetSegmentsInSlice(plane, offset);
         }
 
         /// <summary>
+        /// Get all the segments in a slice layer of the cube.
+        /// </summary>
+        /// <param name="orientation">The orientation of the cube</param>
+        /// <param name="notation">The slice to get</param>
+        /// <returns>The Segments in the slice layer</returns>
+        public List<Segment> GetSlice(CubeOrientation orientation, AbstractMoveNotation notation)
+        {
+            return notation switch
+            {
+                AbstractMoveNotation.m => GetSegmentsInSlice(planeByFaceColour[ColourOrder.GetSideFromDirection(orientation, AbstractMoveNotation.r)], 0),
+                AbstractMoveNotation.e => GetSegmentsInSlice(planeByFaceColour[orientation.Top], 0),
+                AbstractMoveNotation.s => GetSegmentsInSlice(planeByFaceColour[orientation.Front], 0),
+                _ => throw new Exception($"{notation} is not a valid slice move")
+            };
+        }
+
+        /// <summary>
         /// Get all the segments in a slice.
-        /// The 'x' plane goes from 'Y' to 'W'.
-        /// The 'y' plane goes from 'R' to 'O'.
-        /// The 'z' plane goes from 'B' to 'G'.
         /// To get the middle slices, leave <param name="offset"> = 0.
         /// To get the colour slices, use the offset. +1 for the base colours.
         /// -1 for the secondary colours.
@@ -409,19 +314,19 @@ namespace CubeOrientation.CubeStructure
 
                     switch (plane)
                     {
-                        case Plane.X:
+                        case Plane.WY:
                             x = offset;
                             y = a;
                             z = b;
                             break;
 
-                        case Plane.Y:
+                        case Plane.RO:
                             x = a;
                             y = offset;
                             z = b;
                             break;
 
-                        case Plane.Z:
+                        case Plane.BG:
                             x = a;
                             y = b;
                             z = offset;

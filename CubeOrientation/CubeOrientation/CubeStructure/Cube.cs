@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using static CubeOrientation.ColourOrder;
 using static CubeOrientation.CubeStructure.CubeStructure;
+using static CubeOrientation.Notation;
 
 namespace CubeOrientation.CubeStructure
 {
@@ -21,20 +22,15 @@ namespace CubeOrientation.CubeStructure
             Left = 3
         }
 
-        //public static readonly Dictionary<char, string> SLICE_MOVES = new Dictionary<char, string>()
-        //{
-        //    {'M', "" }
-        //} 
-
         /// <summary>The data structure that holds all the segments.</summary>
         private CubeStructure structure;
 
         /// <summary>The data structure that holds all the segments.</summary>
         public CubeStructure Structure => structure;
 
-        public char TopColour { get; private set; } = 'W';
+        public CubeOrientation Orientation => orientation;
+        private CubeOrientation orientation = new CubeOrientation(FaceColours.G, FaceColours.W);
 
-        public char FrontColour { get; private set; } = 'G';
 
         /// <summary>If the cube is in a solved state.</summary>
         public bool Solved
@@ -60,7 +56,7 @@ namespace CubeOrientation.CubeStructure
         {
             structure = new CubeStructure();
 
-            foreach (char[] pathName in GetAllPathNames())
+            foreach (FaceColours[] pathName in GetAllPathNames())
             {
                 structure.SetSegment(new Segment(pathName), pathName);
             }
@@ -71,148 +67,143 @@ namespace CubeOrientation.CubeStructure
         #region Rotation
 
         /// <summary>
-        /// Rotate multiple slices in order.
-        /// The formate should be like "W R' B G W' W' O B Y". An ' is used to denote an counter clockwise rotation.
+        /// Execute multiple <see cref="AbstractMove"/>
         /// </summary>
-        public void MoveBySideColour(string input)
+        public void MoveAbstract(params AbstractMove[] moves)
         {
-            input = input.Replace(" ", string.Empty);
-
-            for (int i = 0; i < input.Length; i++)
+            foreach(AbstractMove move in moves)
             {
-                char slice = input[i];
-                bool clockwise = true;
+                MoveAbstract(move);
+            }
+        }
 
-                if (i + 1 < input.Length && input[i + 1] == '\'')
+        /// <summary>
+        /// Execute a single <see cref="AbstractMove"/>
+        /// </summary>
+        public void MoveAbstract(AbstractMove move)
+        {
+            switch (move.MoveType)
+            {
+                case AbstractMove.MoveTypes.SideLayer:
+                    MoveAbstractSide(move);
+                    break;
+
+                case AbstractMove.MoveTypes.WholeCubeRotation:
+                    MoveAbstractWholeCube(move);
+                    break;
+
+                case AbstractMove.MoveTypes.Slice:
+                    MoveAbstractSlice(move);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Execute a abstract move with <see cref="AbstractMove.MoveTypes.SideLayer"/>
+        /// </summary>
+        private void MoveAbstractSide(AbstractMove move)
+        {
+            MoveLiteral(MoveFactory.AbstractToLiteral(orientation, move));
+        }
+
+        /// <summary>
+        /// Execute an <see cref="AbstractMove"/> with <see cref="AbstractMove.MoveTypes.WholeCubeRotation"/>.
+        /// </summary>
+        /// <remarks>This is done by changing the <see cref="orientation"/> of the cube.</remarks>
+        private void MoveAbstractWholeCube(AbstractMove move)
+        {
+            switch (move.Move)
+            {
+                case AbstractMoveNotation.x:
                 {
-                    i++;
-                    clockwise = false;
+                    //rotate the entire cube on r
+                    FaceColours rightSide = GetSideFromDirection(orientation, move.Move);
+
+                    LiteralMove literal = new LiteralMove(rightSide, move.Modifier);
+                    int rotationOffset = ColourOrder.GetRotationOffset(literal) * -1;
+
+                    orientation.Top = RotateColour(rightSide, orientation.Top, rotationOffset);
+                    orientation.Front = RotateColour(rightSide, orientation.Front, rotationOffset);
+                    break;
+                }
+     
+                case AbstractMoveNotation.y:
+                {
+                    LiteralMove literal = new LiteralMove(orientation.Top, move.Modifier);
+                    int rotationOffset = ColourOrder.GetRotationOffset(literal) * -1;
+
+                    //rotate the entire cube on u
+                    orientation.Front = RotateColour(orientation.Top, orientation.Front, rotationOffset);
+                    break;
                 }
 
-                Move(slice, clockwise);
-            }
-        }
-
-        /// <summary>
-        /// Rotate slices of the cube using <see cref="ColourOrder.DIRECTIONS"/>.
-        /// </summary>
-        /// <remarks>
-        /// Only directions can be used in the input string. Side colours can not be mixed in.
-        /// </remarks>
-        /// <param name="input">The directions of sides to rotate.</param>
-        public void Move(string input)
-        {
-            string sidesToRotate = string.Empty;
-
-            char[] directions = input.Replace(" ", string.Empty).ToCharArray();
-
-            for(int i = 0; i < directions.Length; i++)
-            {
-                if(directions[i] == '\'')
+                case AbstractMoveNotation.z:
                 {
-                    sidesToRotate += '\'';
-                    continue;
+                    LiteralMove literal = new LiteralMove(orientation.Front, move.Modifier);
+                    int rotationOffset = ColourOrder.GetRotationOffset(literal) * -1;
+
+                    //rotate the entire cube on F
+                    orientation.Top = RotateColour(orientation.Top, orientation.Front, rotationOffset);
+                    break;
                 }
 
-                sidesToRotate += GetSideFromDirection(FrontColour, TopColour, directions[i]); 
+                default:
+                    throw new Exception($"\"{move.Move}\" is not a valid notation for rotating the entire cube.");
             }
-
-            MoveBySideColour(sidesToRotate);
         }
 
         /// <summary>
-        /// Rotate all the segments on one side of the cube.
+        /// Execute an <see cref="AbstractMove"/> with <see cref="AbstractMove.MoveTypes.Slice"/>.
         /// </summary>
-        /// <param name="layer">The layer of the cube to rotate.</param>
-        /// <param name="clockwise">True -> Clockwise, False -> Counter Clockwise</param>
-        public void Move(char layer, bool clockwise)
+        /// <remarks>This is done by rotating the 2 side layers beside the slice, and then
+        /// changing the <see cref="orientation"/> of the cube.</remarks>
+        private void MoveAbstractSlice(AbstractMove move)
         {
-            if (COLOUR_ORDER.GetIndex(layer) != -1)
+            switch (move.Move)
             {
-                RotateSideLayer(layer, clockwise);
-                return;
-            }
+                case AbstractMoveNotation.m:
+                    MoveLiteral(new LiteralMove(GetSideFromDirection(orientation, AbstractMoveNotation.l), Move.FlipModifierPrime(move.Modifier)));
+                    MoveLiteral(new LiteralMove(GetSideFromDirection(orientation, AbstractMoveNotation.r), move.Modifier));
+                    MoveAbstractWholeCube(new AbstractMove(AbstractMoveNotation.x, Move.FlipModifierPrime(move.Modifier)));
+                    break;
 
-            if (SLICES.GetIndex(layer) != -1)
-            {
-                RotateSlice(layer, clockwise);
-                return;
-            }
+                case AbstractMoveNotation.e:
+                    MoveLiteral(new LiteralMove(orientation.Top, move.Modifier));
+                    MoveLiteral(new LiteralMove(GetSideFromDirection(orientation, AbstractMoveNotation.d), Move.FlipModifierPrime(move.Modifier)));
+                    MoveAbstractWholeCube(new AbstractMove(AbstractMoveNotation.y, Move.FlipModifierPrime(move.Modifier)));
+                    break;
 
-            throw new Exception($"{layer} is not a valid slice");
+                case AbstractMoveNotation.s:
+                    MoveLiteral(new LiteralMove(orientation.Front, Move.FlipModifierPrime(move.Modifier)));
+                    MoveLiteral(new LiteralMove(GetSideFromDirection(orientation, AbstractMoveNotation.b), move.Modifier));
+                    MoveAbstractWholeCube(new AbstractMove(AbstractMoveNotation.z, move.Modifier));
+                    break;
+
+                default:
+                    throw new Exception($"Invalid slice move notation: {move.Move}");
+            }
         }
 
         /// <summary>
-        /// Rotate a slice on the side of the cube .
+        /// Execute multiple <see cref="LiteralMove"/>.
         /// </summary>
-        /// <param name="slice">The colour of the side that is rotating</param>
-        /// <param name="clockwise">True: clockwise. False: counter clockwise</param>
-        private void RotateSideLayer(char slice, bool clockwise)
+        public void MoveLiteral(params LiteralMove[] moves)
         {
-            foreach (Segment segment in structure.GetSlice(slice))
+            foreach (LiteralMove move in moves)
             {
-                segment.Rotate(slice, clockwise);
+                MoveLiteral(move);
+            }
+        }
+
+        /// <summary>
+        /// Execute a <see cref="LiteralMove"/>.
+        /// </summary>
+        public void MoveLiteral(LiteralMove move)
+        {
+            foreach(Segment segment in structure.GetSideLayer(move.Face))
+            {
+                segment.Rotate(move);
                 structure.SetSegment(segment, segment.location);
-            }
-        }
-
-        /// <summary>
-        /// Rotate one of the middle slices in the cube.
-        /// This is done by rotating the side slices in the same plane so that
-        /// the cube is in the same orientation as if the middle slice was rotated.
-        /// </summary>
-        /// <param name="slice">The slice to rotate (w, e, s)</param>
-        /// <param name="prime">Direction to rotate views from the base colour slice in the plane.</param>
-        private void RotateSlice(char slice, bool prime)
-        {
-
-            //THIS WILL CALL RotateSideLayer and RotateWholeCube with clockwise incorrectly
-
-
-            if (slice == 'm')
-            {
-                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'l'), !prime);
-                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'r'), prime);
-                RotateWholeCube('x', !prime);
-            }
-            else if(slice == 'e')
-            {
-                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'u'), prime);
-                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'd'), !prime);
-                RotateWholeCube('y', !prime);
-            }
-            else if(slice == 's')
-            {
-                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'f'), !prime);
-                RotateSideLayer(GetSideFromDirection(FrontColour, TopColour, 'b'), prime);
-                RotateWholeCube('z', prime);
-            }
-        }
-
-        public void RotateWholeCube(char reorientation, bool clockwise)
-        {
-            if(reorientation == 'x')
-            {
-                //rotate the entire cube on r
-
-                char rightSide = GetSideFromDirection(FrontColour, TopColour, 'r');
-
-                TopColour = RotateColour(rightSide, TopColour, clockwise ? -1 : 1);
-                FrontColour = RotateColour(rightSide, FrontColour, clockwise ? -1 : 1);
-            }
-            else if(reorientation == 'y')
-            {
-                //rotate the entire cube on u
-                FrontColour = RotateColour(TopColour, FrontColour, clockwise ? -1 : 1);
-            }
-            else if(reorientation == 'z')
-            {
-                //rotate the entire cube on F
-                TopColour = RotateColour(FrontColour, TopColour, clockwise ? -1 : 1);
-            }
-            else
-            {
-                //error
             }
         }
 
@@ -221,15 +212,10 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="frontColour"></param>
         /// <param name="topColour"></param>
-        public void SetCubeOrientation(char frontColour, char topColour)
+        public void SetCubeOrientation(FaceColours frontColour, FaceColours topColour)
         {
-            if(!IsValidSideColour(frontColour, topColour))
-            {
-                throw new Exception($"Either {frontColour} or {topColour} is not a valid side colour");
-            }
-
-            FrontColour = frontColour;
-            TopColour = topColour;
+            orientation.Front = frontColour;
+            orientation.Top = topColour;
         }
 
         #endregion
@@ -241,19 +227,19 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="colour">The colour on the segment to look for.</param>
         /// <param name="subset">The type of segments to check.</param>
-        public List<Segment> GetSegmentsByColour(char colour, SegmentSubSets subset = SegmentSubSets.All)
+        public List<Segment> GetSegmentsByColour(FaceColours colour, SegmentSubSets subset = SegmentSubSets.All)
         {
-            return structure.GetSegments((s) => { return s.HasColour(colour);}, subset);
+            return structure.GetSegments((s) => s.HasColour(colour), subset);
         }
 
         /// <summary>
-        /// Get segments that have the specified colour. Only check the segments on the specifed side.
+        /// Get segments that have the specified colour. Only check the segments on the specified side.
         /// </summary>
         /// <param name="colour">The colour on the segment to look for.</param>
         /// <param name="side">The side of the cube to check</param>
-        public List<Segment> GetSegmentsByColour(char colour, char side)
+        public List<Segment> GetSegmentsByColour(FaceColours colour, FaceColours side)
         {
-            return structure.GetSegments((s) => { return s.HasColour(colour); }, side);
+            return structure.GetSegments((s) => s.HasColour(colour), side);
         }
 
         #endregion 
@@ -261,34 +247,24 @@ namespace CubeOrientation.CubeStructure
         #region Get Face Colours
 
         /// <summary>
-        /// Get the colour of a face on a segment using <see cref="ColourOrder.DIRECTIONS"/>.
+        /// Get the colour of a face on a segment using <see cref="ColourOrder.ABSTRACT_DIRECTIONS"/>.
         /// </summary>
-        /// <param name="colourRefrenceDirection">The colour refrence for the face using directions</param>
-        /// <param name="front">The colour of the side at the front of the cube.</param>
-        /// <param name="top">The colour of the side at the top of the cube.</param>
-        /// <returns></returns>
-        public char GetFaceColour(string colourRefrenceDirection, char front, char top)
+        /// <param name="colourRefrenceDirection">The colour reference for the face using directions</param>
+        public FaceColours GetSegmentColourAbstract(AbstractMoveNotation[] colourRefrenceDirection)
         {
-            return GetFaceColour(colourRefrenceDirection.ToCharArray(), front, top);
-        }
-
-        /// <summary>
-        /// Get the colour of a face on a segment using <see cref="ColourOrder.DIRECTIONS"/>.
-        /// </summary>
-        /// <param name="colourRefrenceDirection">The colour refrence for the face using directions</param>
-        /// <param name="front">The colour of the side at the front of the cube.</param>
-        /// <param name="top">The colour of the side at the top of the cube.</param>
-        /// <returns></returns>
-        public char GetFaceColour(char[] colourRefrenceDirection, char front, char top)
-        {
-            char[] sides = new char[colourRefrenceDirection.Length];
+            FaceColours[] sides = new FaceColours[colourRefrenceDirection.Length];
 
             for(int i = 0; i < colourRefrenceDirection.Length; i++)
             {
-                sides[i] = GetSideFromDirection(front, top, colourRefrenceDirection[i]);
+                if(ABSTRACT_DIRECTIONS.GetIndex(colourRefrenceDirection[i]) == -1)
+                {
+                    throw new Exception($"Only {AbstractMove.MoveTypes.SideLayer} abstract notations can be used to get face colour");
+                }
+
+                sides[i] = GetSideFromDirection(orientation, colourRefrenceDirection[i]);
             }
 
-            return GetFaceColour(sides);
+            return GetSegmentColourLiteral(sides);
         }
 
         /// <summary>
@@ -297,20 +273,9 @@ namespace CubeOrientation.CubeStructure
         /// The first element in the <param name="colourRefrence"> determines which side of 
         /// segment is used.
         /// </summary>
-        public char GetFaceColour(string colourRefrence)
+        public FaceColours GetSegmentColourLiteral(FaceColours[] colourRefrence)
         {
-            return GetFaceColour(colourRefrence.ToCharArray());
-        }
-
-        /// <summary>
-        /// Get the colour of single face on the cube.
-        /// The <param name="colourRefrence"> is used to find the segment on the cube.
-        /// The first element in the <param name="colourRefrence"> determines which side of 
-        /// segment is used.
-        /// </summary>
-        public char GetFaceColour(char[] colourRefrence)
-        {
-            char face = colourRefrence[0];
+            FaceColours face = colourRefrence[0];
 
             Segment segment = structure.GetSegment(colourRefrence);
 
@@ -325,9 +290,9 @@ namespace CubeOrientation.CubeStructure
         /// </summary>
         /// <param name="side">The side of the cube to get the face colours of.</param>
         /// <returns>The colours of all the faces on the given side.</returns>
-        public char[] GetFaceColoursOnSide(char side)
+        public FaceColours[] GetFaceColoursOnSide(FaceColours side)
         {
-            char[] output = new char[SEGMENTS_PER_SIDE];
+            FaceColours[] output = new FaceColours[SEGMENTS_PER_SIDE];
 
             List<Segment> segmentsOnSide = structure.GetSegments(side);
 
@@ -343,15 +308,15 @@ namespace CubeOrientation.CubeStructure
         /// Get the all the colours on one side of cube.
         /// </summary>
         /// <remarks>
-        /// This method should only be used for testing purposes. 
+        /// This method should only be used for testing purposes.
         /// </remarks>
         /// <param name="sideColour">The side of the cube to get the colours on.</param>
         /// <param name="topColour">The colour at the top of the cube.</param>
         /// <returns>All the colours on the face. (0,0) is bottom left, (2, 2) is top right.</returns>
-        public char[,] GetFacesOnSideToPrint(char sideColour, char topColour)
+        public char[,] GetFacesOnSideToPrint(FaceColours sideColour, FaceColours topColour)
         {
             //get the colours that will be used to define the colour references
-            char[] adjacentColours = new char[ROTATION_ORDER_LENGTH];
+            FaceColours[] adjacentColours = new FaceColours[ROTATION_ORDER_LENGTH];
 
             for (int i = 0; i < ROTATION_ORDER_LENGTH; i++)
             {
@@ -369,27 +334,27 @@ namespace CubeOrientation.CubeStructure
                     int xOffset = x - 1;
                     int yOffset = y - 1;
 
-                    char[] colourReference = new char[3] { sideColour, '\0', '\0' };
+                    List<FaceColours> colourReference = new List<FaceColours>() { sideColour };
 
                     if (xOffset == 1)
                     {
-                        colourReference[1] = adjacentColours[(int)Directions.Right];
+                        colourReference.Add(adjacentColours[(int)Directions.Right]);
                     }
                     else if (xOffset == -1)
                     {
-                        colourReference[1] = adjacentColours[(int)Directions.Left];
+                        colourReference.Add(adjacentColours[(int)Directions.Left]);
                     }
 
                     if (yOffset == 1)
                     {
-                        colourReference[2] = adjacentColours[(int)Directions.Up];
+                        colourReference.Add(adjacentColours[(int)Directions.Up]);
                     }
                     else if (yOffset == -1)
                     {
-                        colourReference[2] = adjacentColours[(int)Directions.Down];
+                        colourReference.Add(adjacentColours[(int)Directions.Down]);
                     }
 
-                    output[x, y] = GetFaceColour(colourReference);
+                    output[x, y] = (GetSegmentColourLiteral(colourReference.ToArray()).ToString())[0];
                 }
             }
 
@@ -404,7 +369,7 @@ namespace CubeOrientation.CubeStructure
 
             string output = string.Empty;
 
-            char[,] red = GetFacesOnSideToPrint('R', 'Y');
+            char[,] red = GetFacesOnSideToPrint(orientation.Top, GetSideFromDirection(orientation, AbstractMoveNotation.b));
 
             for (int y = SIZE - 1; y >= 0; y--)
             {
@@ -422,10 +387,10 @@ namespace CubeOrientation.CubeStructure
 
             List<char[,]> middleColours = new List<char[,]>()
             {
-                GetFacesOnSideToPrint('B', 'R'),
-                GetFacesOnSideToPrint('W', 'R'),
-                GetFacesOnSideToPrint('G', 'R'),
-                GetFacesOnSideToPrint('Y', 'R')
+                GetFacesOnSideToPrint(GetSideFromDirection(orientation, AbstractMoveNotation.l), orientation.Top),
+                GetFacesOnSideToPrint(orientation.Front, orientation.Top),
+                GetFacesOnSideToPrint(GetSideFromDirection(orientation, AbstractMoveNotation.r), orientation.Top),
+                GetFacesOnSideToPrint(GetSideFromDirection(orientation, AbstractMoveNotation.b), orientation.Top)
             };
 
             for (int y = SIZE - 1; y >= 0; y--)
@@ -446,7 +411,7 @@ namespace CubeOrientation.CubeStructure
             output += "\n";
 
 
-            char[,] orange = GetFacesOnSideToPrint('O', 'W');
+            char[,] orange = GetFacesOnSideToPrint(GetSideFromDirection(orientation, AbstractMoveNotation.d), orientation.Front);
 
             for (int y = SIZE - 1; y >= 0; y--)
             {

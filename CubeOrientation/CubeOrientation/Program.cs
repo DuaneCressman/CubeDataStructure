@@ -8,32 +8,7 @@ namespace CubeOrientation
     {
         static void Main(string[] args)
         {
-            Cube cube = new Cube();
-
-            Console.WriteLine($"Front = {cube.FrontColour}, Top = {cube.TopColour}");
-
-            cube.RotateWholeCube('x', false);
-            cube.RotateWholeCube('z', false);
-            cube.RotateWholeCube('y', true);
-            cube.RotateWholeCube('x', true);
-
-
-
-
-            Console.WriteLine($"Front = {cube.FrontColour}, Top = {cube.TopColour}");
-
-            
-
-
-            //cube.RotateSlices("f u l' u b d' r r f'", 'R', 'W');
-
-            //string[] faces = { "ubr", "fl", "dfr", "bd" };
-            //char[] correctColours = { 'O', 'R', 'R', 'O' };
-
-            //for(int i = 0; i < faces.Length; i++)
-            //{
-            //    Console.WriteLine($"{faces[i]} = {cube.GetFaceColour(faces[i], 'W', 'R')}");
-            //}
+            Example();
 
         }
 
@@ -45,7 +20,7 @@ namespace CubeOrientation
 
             Console.WriteLine($"Applying rotations {rotationtions}\n");
 
-            cube.MoveBySideColour(rotationtions);
+            cube.MoveLiteral(MoveFactory.BuildLiteralMoves(rotationtions));
 
             Console.WriteLine(cube);
         }

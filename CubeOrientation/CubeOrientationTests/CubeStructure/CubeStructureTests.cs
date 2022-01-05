@@ -3,6 +3,9 @@ using CubeOrientation.CubeStructure;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using static CubeOrientation.Notation;
+
+using FC = CubeOrientation.Notation.FaceColours;
 
 namespace CubeOrientation.CubeStructure.Tests
 {
@@ -13,7 +16,7 @@ namespace CubeOrientation.CubeStructure.Tests
         /// Test that the cube can be rotated many times without loosing track of any
         /// of the segments.
         /// </summary>
-        [TestMethod()]
+        [TestMethod]
         public void CubeTracksRotations()
         {
             int moveCount = 100;
@@ -29,21 +32,13 @@ namespace CubeOrientation.CubeStructure.Tests
             {
                 Cube cube = new Cube();
 
-                Tuple<char, bool>[] moves = new Tuple<char, bool>[moveCount];
+                AbstractMove[] moves = MoveFactory.GenerateRandomAbstractMoves(moveCount);
 
-                for (int i = 0; i < moveCount; i++)
-                {
-                    char slice = slices[random.Next(0, slices.Length)];
-                    bool clockwise = random.Next(0, 2) == 1;
-
-                    moves[i] = new Tuple<char, bool>(slice, clockwise);
-
-                    cube.Move(slice, clockwise);
-                }
+                cube.MoveAbstract(moves);
 
                 for (int i = moveCount - 1; i >= 0; i--)
                 {
-                    cube.Move(moves[i].Item1, !moves[i].Item2);
+                    cube.MoveAbstract(moves[i].Reversed);
                 }
 
                 if (!cube.Solved)
@@ -58,15 +53,15 @@ namespace CubeOrientation.CubeStructure.Tests
         /// <summary>
         /// Test that getting an entire face of colours after rotations is accurate.
         /// </summary>
-        [TestMethod()]
+        [TestMethod]
         public void FaceColoursAreCorrect()
         {
             Cube cube = new Cube();
 
-            cube.MoveBySideColour("R R G' Y' W");
+            cube.MoveLiteral(MoveFactory.BuildLiteralMoves("R2 G' Y' W"));
 
-            char[,] redFaces = cube.GetFacesOnSideToPrint('R', 'W');
-            char[,] whiteFaces = cube.GetFacesOnSideToPrint('W', 'B');
+            char[,] redFaces = cube.GetFacesOnSideToPrint(FC.R, FC.W);
+            char[,] whiteFaces = cube.GetFacesOnSideToPrint(FC.W, FC.B);
 
             char[,] correctRedFaces = new char[3, 3]
             {
@@ -118,12 +113,14 @@ namespace CubeOrientation.CubeStructure.Tests
         /// <summary>
         /// Test that after rotations, the correct individual faces can be found.
         /// </summary>
-        [TestMethod()]
+        [TestMethod]
         public void GetIndividualFaces()
         {
             Cube cube = new Cube();
 
-            cube.MoveBySideColour("W Y W G G B' O' R B");
+            LiteralMove[] moves = MoveFactory.BuildLiteralMoves("W Y W G G B' O' R B".ToLower());
+
+            cube.MoveLiteral(moves);
 
             bool errorFound = false;
 
@@ -141,7 +138,7 @@ namespace CubeOrientation.CubeStructure.Tests
 
             foreach (Tuple<string, char> pair in answers)
             {
-                if (cube.GetFaceColour(pair.Item1.ToCharArray()) != pair.Item2)
+                if (cube.GetSegmentColourLiteral(ParseFaceColours(pair.Item1)) != ParseFaceColours(pair.Item2)[0])
                 {
                     errorFound = true;
                     break;
@@ -151,7 +148,7 @@ namespace CubeOrientation.CubeStructure.Tests
             Assert.IsFalse(errorFound);
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void GettingAllSegments()
         {
             Cube cube = new Cube();
@@ -161,7 +158,7 @@ namespace CubeOrientation.CubeStructure.Tests
             Assert.IsTrue(all.Count == CubeStructure.TOTAL_SEGMENTS);
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void GettingEdgeSegments()
         {
             Cube cube = new Cube();
@@ -189,11 +186,9 @@ namespace CubeOrientation.CubeStructure.Tests
             Cube cube = new Cube();
 
             List<Segment> corners = cube.Structure.GetSegments(CubeStructure.SegmentSubSets.Corners);
-
-            bool allCorrect = true;
-
-            allCorrect = corners.Count == CubeStructure.TOTAL_CORNER_SEGMENTS;
-
+            
+            bool allCorrect = corners.Count == CubeStructure.TOTAL_CORNER_SEGMENTS;
+            
             foreach (Segment segment in corners)
             {
                 if (segment.location.Length != 3)
@@ -206,7 +201,7 @@ namespace CubeOrientation.CubeStructure.Tests
             Assert.IsTrue(allCorrect);
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void GettingSegmentsBySide()
         {
             Cube cube = new Cube();
@@ -236,16 +231,18 @@ namespace CubeOrientation.CubeStructure.Tests
             Assert.IsTrue(allCorrect);
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void DirectionsAreCorrect()
         {
             bool allCorrect = true;
 
-            char[] correctSides = { 'R', 'O', 'B', 'G', 'W', 'Y' };
+            FaceColours[] correctSides = ParseFaceColours("ROBGWY");
 
-            for (int i = 0; i < ColourOrder.DIRECTIONS.Length; i++)
+            CubeOrientation orientation = new CubeOrientation(FaceColours.R, FaceColours.W);
+
+            for (int i = 0; i < ColourOrder.ABSTRACT_DIRECTIONS.Length; i++)
             {
-                if(ColourOrder.GetSideFromDirection('R', 'W', ColourOrder.DIRECTIONS[i]) != correctSides[i])
+                if(ColourOrder.GetSideFromDirection(orientation, ColourOrder.ABSTRACT_DIRECTIONS[i]) != correctSides[i])
                 {
                     allCorrect = false;
                     break;
@@ -255,22 +252,22 @@ namespace CubeOrientation.CubeStructure.Tests
             Assert.IsTrue(allCorrect);
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void GettingFacesByDirections()
         {
             Cube cube = new Cube();
-            cube.SetCubeOrientation('R', 'W');
+            cube.SetCubeOrientation(FaceColours.R, FaceColours.W);
 
-            cube.Move("f u l' u b d' r r f'");
+            AbstractMove[] moves = MoveFactory.BuildAbstractMoves("f u l' u b d' r r f'");
 
             string[] faces = { "ubr", "fl", "dfr", "bd" };
-            char[] correctColours = { 'O', 'R', 'R', 'O' };
+            FaceColours[] correctColours = { FaceColours.R, FaceColours.O, FaceColours.R, FaceColours.O };
 
             bool allCorrect = true;
-
+            
             for (int i = 0; i < faces.Length; i++)
             {
-                if(cube.GetFaceColour(faces[i], 'W', 'R') != correctColours[i])
+                if(cube.GetSegmentColourAbstract(ParseAbstractNotation(faces[i])) != correctColours[i])
                 {
                     allCorrect = false;
                     break;
@@ -283,17 +280,22 @@ namespace CubeOrientation.CubeStructure.Tests
         [TestMethod]
         public void RotateEntireCube()
         {
-            char correctTop = 'G';
-            char correctFront = 'O';
+            FaceColours correctTop = FaceColours.G;
+            FaceColours correctFront = FaceColours.O;
 
             Cube cube = new Cube();
 
-            cube.RotateWholeCube('x', true);
-            cube.RotateWholeCube('z', true);
-            cube.RotateWholeCube('y', false);
-            cube.RotateWholeCube('x', false);
+            AbstractMove[] cubeRotations = new AbstractMove[]
+            {
+                new AbstractMove(AbstractMoveNotation.x, Move.Modifiers.None),
+                new AbstractMove(AbstractMoveNotation.z, Move.Modifiers.None),
+                new AbstractMove(AbstractMoveNotation.y, Move.Modifiers.Prime),
+                new AbstractMove(AbstractMoveNotation.x, Move.Modifiers.Prime)
+            };
 
-            Assert.IsTrue(cube.FrontColour == correctFront && cube.TopColour == correctTop);
+            cube.MoveAbstract(cubeRotations);
+
+            Assert.IsTrue(cube.Orientation.Front == correctFront && cube.Orientation.Top == correctTop);
         }
     }
 }

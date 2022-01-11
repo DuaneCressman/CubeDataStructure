@@ -30,7 +30,7 @@ namespace CubeOrientation
             SideLayer
         }
 
-        public MoveTypes MoveType => MoveType;
+        public MoveTypes MoveType => moveType;
         private readonly MoveTypes moveType;
 
         public AbstractMoveNotation Move => move;
@@ -38,7 +38,7 @@ namespace CubeOrientation
 
         public AbstractMove Reversed => new AbstractMove(move, FlipModifierPrime(Modifier));
 
-        public AbstractMove(char notation, Modifiers modifier) : base(modifier)
+        public AbstractMove(char notation, Modifiers modifier = Modifiers.None) : base(modifier)
         {
             if(!MovesByChar.ContainsKey(notation))
             {
@@ -76,6 +76,16 @@ namespace CubeOrientation
             {
                 throw new Exception($"Abstract notation does not have a move type: {move}");
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{move}" + Modifier switch
+            {
+                Modifiers.Prime => "\'",
+                Modifiers.HalfTurn => "2",
+                _ => string.Empty
+            };
         }
     }
 }

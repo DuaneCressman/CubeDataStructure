@@ -87,7 +87,7 @@ namespace CubeOrientation
 
             FaceColours[] rotationOrder = rotationOrderByFace[sideColour];
 
-            if (inverseRotationFaces.Contains(sideColour))
+            if (IsSecondaryColour(sideColour))
             {
                 offset *= -1;
             }
@@ -173,10 +173,8 @@ namespace CubeOrientation
             {
                 return 2;
             }
-            else
-            {
-                return IsSecondaryColour(move.Face) == (move.Modifier == Move.Modifiers.Prime) ? 1 : -1;
-            }
+
+            return move.Modifier == Move.Modifiers.Prime ? -1 : 1;
         }
     }
 }

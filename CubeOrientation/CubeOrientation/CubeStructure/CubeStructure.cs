@@ -228,9 +228,9 @@ namespace CubeOrientation.CubeStructure
             {
                 V3Int current = offsetByFaceColour[colour];
 
-                if(coordinates.x == current.x ||
-                   coordinates.y == current.y ||
-                   coordinates.z == current.z )
+                if((coordinates.x != 0 && coordinates.x == current.x) ||
+                   (coordinates.y != 0 && coordinates.y == current.y) ||
+                   (coordinates.z != 0 && coordinates.z == current.z))
                 {
                     faces.Add(colour);
                 }

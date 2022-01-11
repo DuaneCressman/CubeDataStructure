@@ -49,5 +49,10 @@ namespace CubeOrientation
                 return simplified;
             }
         }
+
+        public override string ToString()
+        {
+            return $"({x}, {y}, {z})";
+        }
     }
 }

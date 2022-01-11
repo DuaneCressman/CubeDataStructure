@@ -45,21 +45,23 @@ namespace CubeOrientation.CubeStructure
 
         public Cube()
         {
-            BuildCube();
+            structure = BuildCube();
         }
 
         /// <summary>
         /// Creates all the segments that make up the cube. The segments are stored in a <see cref="CubeStructure"/>. 
         /// The cube will be in the solved position.
         /// </summary>
-        public void BuildCube()
+        private static CubeStructure BuildCube()
         {
-            structure = new CubeStructure();
+            CubeStructure structure = new CubeStructure();
 
             foreach (FaceColours[] pathName in GetAllPathNames())
             {
                 structure.SetSegment(new Segment(pathName), pathName);
             }
+
+            return structure;
         }
 
         #endregion
@@ -67,7 +69,7 @@ namespace CubeOrientation.CubeStructure
         #region Rotation
 
         /// <summary>
-        /// Execute multiple <see cref="AbstractMove"/>
+        /// Execute multiple <see cref="AbstractMove"/>. These are moves like L, R, U, D.
         /// </summary>
         public void MoveAbstract(params AbstractMove[] moves)
         {
@@ -117,7 +119,7 @@ namespace CubeOrientation.CubeStructure
                 case AbstractMoveNotation.x:
                 {
                     //rotate the entire cube on r
-                    FaceColours rightSide = GetSideFromDirection(orientation, move.Move);
+                    FaceColours rightSide = GetSideFromDirection(orientation, AbstractMoveNotation.r);
 
                     LiteralMove literal = new LiteralMove(rightSide, move.Modifier);
                     int rotationOffset = ColourOrder.GetRotationOffset(literal) * -1;
@@ -126,11 +128,11 @@ namespace CubeOrientation.CubeStructure
                     orientation.Front = RotateColour(rightSide, orientation.Front, rotationOffset);
                     break;
                 }
-     
+
                 case AbstractMoveNotation.y:
                 {
                     LiteralMove literal = new LiteralMove(orientation.Top, move.Modifier);
-                    int rotationOffset = ColourOrder.GetRotationOffset(literal) * -1;
+                    int rotationOffset = GetRotationOffset(literal) * -1;
 
                     //rotate the entire cube on u
                     orientation.Front = RotateColour(orientation.Top, orientation.Front, rotationOffset);
@@ -143,7 +145,7 @@ namespace CubeOrientation.CubeStructure
                     int rotationOffset = ColourOrder.GetRotationOffset(literal) * -1;
 
                     //rotate the entire cube on F
-                    orientation.Top = RotateColour(orientation.Top, orientation.Front, rotationOffset);
+                    orientation.Top = RotateColour(orientation.Front, orientation.Top, rotationOffset);
                     break;
                 }
 
@@ -186,6 +188,7 @@ namespace CubeOrientation.CubeStructure
 
         /// <summary>
         /// Execute multiple <see cref="LiteralMove"/>.
+        /// These are moves for a specific colour layer of the cube.
         /// </summary>
         public void MoveLiteral(params LiteralMove[] moves)
         {
@@ -273,7 +276,7 @@ namespace CubeOrientation.CubeStructure
         /// The first element in the <param name="colourRefrence"> determines which side of 
         /// segment is used.
         /// </summary>
-        public FaceColours GetSegmentColourLiteral(FaceColours[] colourRefrence)
+        public FaceColours GetSegmentColourLiteral(params FaceColours[] colourRefrence)
         {
             FaceColours face = colourRefrence[0];
 
@@ -318,43 +321,37 @@ namespace CubeOrientation.CubeStructure
             //get the colours that will be used to define the colour references
             FaceColours[] adjacentColours = new FaceColours[ROTATION_ORDER_LENGTH];
 
-            for (int i = 0; i < ROTATION_ORDER_LENGTH; i++)
+            FaceColours s = sideColour;
+            FaceColours t = topColour;
+            FaceColours r = RotateColour(sideColour, topColour, 1);
+            FaceColours b = RotateColour(sideColour, topColour, 2);
+            FaceColours l = RotateColour(sideColour, topColour, 3);
+
+            FaceColours[] colours = new FaceColours[]
             {
-                adjacentColours[i] = RotateColour(sideColour, topColour, i);
-            }
+                GetSegmentColourLiteral(s, b, l),
+                GetSegmentColourLiteral(s, b),
+                GetSegmentColourLiteral(s, b, r),
+                GetSegmentColourLiteral(s, l),
+                s,
+                GetSegmentColourLiteral(s, r),
+                GetSegmentColourLiteral(s, l, t),
+                GetSegmentColourLiteral(s, t),
+                GetSegmentColourLiteral(s, t, r)
+            };
 
             char[,] output = new char[3, 3];
+
+
+
+            int i = 0;
 
             for (int y = 0; y < SIZE; y++)
             {
                 for (int x = 0; x < SIZE; x++)
                 {
-                    //determine the colours that are needed to reference this side.
-
-                    int xOffset = x - 1;
-                    int yOffset = y - 1;
-
-                    List<FaceColours> colourReference = new List<FaceColours>() { sideColour };
-
-                    if (xOffset == 1)
-                    {
-                        colourReference.Add(adjacentColours[(int)Directions.Right]);
-                    }
-                    else if (xOffset == -1)
-                    {
-                        colourReference.Add(adjacentColours[(int)Directions.Left]);
-                    }
-
-                    if (yOffset == 1)
-                    {
-                        colourReference.Add(adjacentColours[(int)Directions.Up]);
-                    }
-                    else if (yOffset == -1)
-                    {
-                        colourReference.Add(adjacentColours[(int)Directions.Down]);
-                    }
-
-                    output[x, y] = (GetSegmentColourLiteral(colourReference.ToArray()).ToString())[0];
+                    output[x, y] = colours[i].ToChar();
+                    i++;
                 }
             }
 

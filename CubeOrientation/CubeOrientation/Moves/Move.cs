@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
-using static CubeOrientation.Notation;
 
 namespace CubeOrientation
 {
-    public class Move
+    /// <summary>
+    /// A single move that is made on the cube
+    /// </summary>
+    public abstract class Move
     {
         public enum MoveClassifications
         {
@@ -41,10 +40,9 @@ namespace CubeOrientation
             Modifier = modifier;
         }
 
-        #region Static Validation
-
-        
-
+        /// <summary>
+        /// Flip the prime modifier.
+        /// </summary>
         public static Modifiers FlipModifierPrime(Modifiers modifier) => modifier switch
         {
             Modifiers.None => Modifiers.Prime,
@@ -52,7 +50,5 @@ namespace CubeOrientation
             Modifiers.HalfTurn => Modifiers.HalfTurn,
             _ => throw new Exception($"Invalid Modifier case: {modifier}")
         };
-
-        #endregion
     }
 }

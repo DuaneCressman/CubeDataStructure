@@ -9,9 +9,28 @@ using FC = CubeOrientation.Notation.FaceColours;
 
 namespace CubeOrientation.CubeStructure.Tests
 {
-    [TestClass()]
+    [TestClass]
     public class CubeTests
     {
+        [TestMethod]
+        public void AbstractMoves()
+        {
+            List<AbstractMove> moves = new List<AbstractMove>();
+
+            foreach(char c in VALID_ABSTRACT_LETTERS)
+            {
+                moves.Add(new AbstractMove(c));
+                moves.Add(new AbstractMove(c, Move.Modifiers.Prime));
+                moves.Add(new AbstractMove(c, Move.Modifiers.HalfTurn));
+            }
+
+            Cube cube = new Cube();
+
+            cube.MoveAbstract(moves.ToArray());
+
+            Assert.IsTrue(true);
+        }
+
         /// <summary>
         /// Test that the cube can be rotated many times without loosing track of any
         /// of the segments.
@@ -21,10 +40,6 @@ namespace CubeOrientation.CubeStructure.Tests
         {
             int moveCount = 100;
             int testCount = 100;
-
-            Random random = new Random();
-
-            char[] slices = "WYROBGxyz".ToCharArray();
 
             bool allTestsPassed = true;
 
@@ -118,27 +133,23 @@ namespace CubeOrientation.CubeStructure.Tests
         {
             Cube cube = new Cube();
 
-            LiteralMove[] moves = MoveFactory.BuildLiteralMoves("W Y W G G B' O' R B".ToLower());
+            LiteralMove[] moves = MoveFactory.BuildLiteralMoves("W B2 W' G Y' W");
 
             cube.MoveLiteral(moves);
 
             bool errorFound = false;
 
-            Tuple<string, char>[] answers = new Tuple<string, char>[]
+            List<(string seg, FaceColours colour)> answers = new List<(string seg, FC colour)>()
             {
-                new Tuple<string, char>("BO", 'B'),
-                new Tuple<string, char>("OB", 'O'),
-                new Tuple<string, char>("GWR", 'W'),
-                new Tuple<string, char>("OG", 'B'),
-                new Tuple<string, char>("Y", 'Y'),
-                new Tuple<string, char>("BYR", 'B'),
-                new Tuple<string, char>("YBO", 'G'),
-                new Tuple<string, char>("YR", 'G')
+                ("WRG", FC.W),
+                ("OB", FC.R),
+                ("RBY", FC.O),
+                ("BW", FC.B)
             };
 
-            foreach (Tuple<string, char> pair in answers)
+            foreach ((string seg, FaceColours colour) in answers)
             {
-                if (cube.GetSegmentColourLiteral(ParseFaceColours(pair.Item1)) != ParseFaceColours(pair.Item2)[0])
+                if (cube.GetSegmentColourLiteral(ParseFaceColours(seg)) != colour)
                 {
                     errorFound = true;
                     break;
@@ -240,6 +251,8 @@ namespace CubeOrientation.CubeStructure.Tests
 
             CubeOrientation orientation = new CubeOrientation(FaceColours.R, FaceColours.W);
 
+            //ABSTRACT_DIRECTIONS = F B R L U D
+
             for (int i = 0; i < ColourOrder.ABSTRACT_DIRECTIONS.Length; i++)
             {
                 if(ColourOrder.GetSideFromDirection(orientation, ColourOrder.ABSTRACT_DIRECTIONS[i]) != correctSides[i])
@@ -258,10 +271,10 @@ namespace CubeOrientation.CubeStructure.Tests
             Cube cube = new Cube();
             cube.SetCubeOrientation(FaceColours.R, FaceColours.W);
 
-            AbstractMove[] moves = MoveFactory.BuildAbstractMoves("f u l' u b d' r r f'");
+            cube.MoveAbstract(MoveFactory.BuildAbstractMoves("f u l' u b d' r r f'"));
 
             string[] faces = { "ubr", "fl", "dfr", "bd" };
-            FaceColours[] correctColours = { FaceColours.R, FaceColours.O, FaceColours.R, FaceColours.O };
+            FaceColours[] correctColours = { FaceColours.R, FaceColours.O, FaceColours.R, FaceColours.G };
 
             bool allCorrect = true;
             

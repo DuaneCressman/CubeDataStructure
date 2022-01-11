@@ -110,15 +110,13 @@ namespace CubeOrientation
         {
             string colours = string.Empty, location = string.Empty;
 
-            for (int i = 0; i < colours.Length; i++)
+            for (int i = 0; i < this.colours.Length; i++)
             {
                 colours += this.colours[i];
                 location += this.location[i];
             }
 
-            return "\n" +
-                   $"   Piece: {colours} \n" +
-                   $"Location: {location}";
+            return $"{colours} + {location}";
         }
     }
 }

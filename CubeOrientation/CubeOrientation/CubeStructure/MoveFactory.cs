@@ -10,7 +10,9 @@ namespace CubeOrientation.CubeStructure
     {
         public static LiteralMove[] BuildLiteralMoves(string notation)
         {
-            if (!Notation.ValidateLiteralMove(notation))
+            notation = notation.CleanNotation();
+
+            if (!ValidateLiteralMove(notation))
             {
                 throw InvalidMoveNotationException.Build(notation, Move.MoveClassifications.Literal);
             }
@@ -29,7 +31,9 @@ namespace CubeOrientation.CubeStructure
 
         public static AbstractMove[] BuildAbstractMoves(string notation)
         {
-            if (!Notation.ValidAbstractMove(notation))
+            notation = notation.CleanNotation();
+
+            if (!ValidAbstractMove(notation))
             {
                 throw InvalidMoveNotationException.Build(notation, Move.MoveClassifications.Abstract);
             }
@@ -54,14 +58,14 @@ namespace CubeOrientation.CubeStructure
                 char note = notation[i];
                 Move.Modifiers modifier = Move.Modifiers.None;
 
-                if (i < notation.Length - 2)
+                if (i < notation.Length - 1)
                 {
-                    if (notation[i + 1] == Notation.PRIME_NOTATION)
+                    if (notation[i + 1] == PRIME_NOTATION)
                     {
                         modifier = Move.Modifiers.Prime;
                         i++;
                     }
-                    else if (notation[i + 1] == Notation.HALF_TURN_NOTATION)
+                    else if (notation[i + 1] == HALF_TURN_NOTATION)
                     {
                         modifier = Move.Modifiers.HalfTurn;
                         i++;
@@ -100,6 +104,5 @@ namespace CubeOrientation.CubeStructure
 
             return output;
         }
-
     }
 }

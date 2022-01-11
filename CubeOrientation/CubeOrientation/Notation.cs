@@ -9,7 +9,7 @@ namespace CubeOrientation
     public static class Notation
     {
         public const string VALID_ABSTRACT_LETTERS = "udlrfbmsexyz";
-        public const string VALID_LITERAL_LETTERS = "wyrgbg";
+        public const string VALID_LITERAL_LETTERS = "wyrobg";
 
         public const char PRIME_NOTATION = '\'';
         public const char HALF_TURN_NOTATION = '2';
@@ -145,7 +145,10 @@ namespace CubeOrientation
 
         public static bool ValidAbstractMove(string move)
         {
-            return Regex.Match(move.Trim().Replace(" ", string.Empty).ToLower(), $"^[{VALID_ABSTRACT_LETTERS + PRIME_NOTATION + HALF_TURN_NOTATION}]$").Success;
+            move = move.CleanNotation();
+            string rx = $"^[{VALID_ABSTRACT_LETTERS + PRIME_NOTATION + HALF_TURN_NOTATION}]+$";
+
+            return Regex.Match(move, rx).Success;
         }
 
         public static bool ValidateLiteralMove(char move)
@@ -155,19 +158,28 @@ namespace CubeOrientation
 
         public static bool ValidateLiteralMove(string move)
         {
-            return Regex.Match(move.Trim().Replace(" ", string.Empty).ToLower(), $"^[{VALID_LITERAL_LETTERS + PRIME_NOTATION + HALF_TURN_NOTATION}]$").Success;
+            return Regex.Match(CleanNotation(move), $"^[{VALID_LITERAL_LETTERS + PRIME_NOTATION + HALF_TURN_NOTATION}]+$").Success;
+        }
+
+        public static FaceColours ParseFaceColours(char notation)
+        {
+            if (FacesByChar.TryGetValue(notation, out FaceColours face))
+            {
+                return face;
+            }
+            else
+            {
+                throw InvalidMoveNotationException.Build(notation, Move.MoveClassifications.Literal);
+            }
         }
 
         public static FaceColours[] ParseFaceColours(string notation)
         {
-            return ParseFaceColours(notation.ToLower().ToCharArray());
-        }
+            notation = notation.CleanNotation();
 
-        public static FaceColours[] ParseFaceColours(params char[] notation)
-        {
-            if(!Regex.Match(notation.ToString().ToLower(), $"^[{VALID_LITERAL_LETTERS}]$").Success)
+            if (!Regex.Match(notation, $"^[{VALID_LITERAL_LETTERS}]+$").Success)
             {
-                throw InvalidMoveNotationException.Build(notation.ToString(), Move.MoveClassifications.Literal);
+                throw InvalidMoveNotationException.Build(notation, Move.MoveClassifications.Literal);
             }
 
             FaceColours[] output = new FaceColours[notation.Length];
@@ -182,12 +194,7 @@ namespace CubeOrientation
 
         public static AbstractMoveNotation[] ParseAbstractNotation(string notation)
         {
-            return ParseAbstractNotation(notation.ToLower().ToCharArray());
-        }
-
-        public static AbstractMoveNotation[] ParseAbstractNotation(params char[] notation)
-        {
-            if (!Regex.Match(notation.ToString().ToLower(), $"^[{VALID_ABSTRACT_LETTERS}]$").Success)
+            if (!Regex.Match(notation.CleanNotation(), $"^[{VALID_ABSTRACT_LETTERS}]+$").Success)
             {
                 throw InvalidMoveNotationException.Build(notation.ToString(), Move.MoveClassifications.Abstract);
             }
@@ -200,6 +207,16 @@ namespace CubeOrientation
             }
 
             return output;
+        }
+
+        public static string CleanNotation(this string s)
+        {
+            return s.Trim().Replace(" ", string.Empty).ToLower();
+        }
+
+        public static char ToChar(this FaceColours faceColour)
+        {
+            return faceColour.ToString()[0];
         }
     }
 }

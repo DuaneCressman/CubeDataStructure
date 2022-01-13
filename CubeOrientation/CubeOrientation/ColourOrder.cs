@@ -5,7 +5,7 @@ using System.Text;
 using static CubeOrientation.Notation;
 
 using L = CubeOrientation.Notation.FaceColours;
-using A = CubeOrientation.Notation.AbstractMoveNotation;
+using AMN = CubeOrientation.Notation.AbstractMoveNotation;
 
 namespace CubeOrientation
 {
@@ -28,6 +28,23 @@ namespace CubeOrientation
             {L.O, RRotationOrder },
             {L.B, BRotationOrder },
             {L.G, BRotationOrder }
+        };
+
+        public static readonly AMN[] XRotationOrder = { AMN.u, AMN.b, AMN.d, AMN.f };
+        public static readonly AMN[] YRotationOrder = { AMN.b, AMN.r, AMN.f, AMN.l };
+        public static readonly AMN[] ZRotationOrder = { AMN.u, AMN.r, AMN.d, AMN.l };
+
+        private static readonly Dictionary<AMN, AMN[]> rotationOrderByAxis = new Dictionary<AMN, AMN[]>()
+        {
+            {AMN.f, ZRotationOrder },
+            {AMN.b, ZRotationOrder },
+            {AMN.r, XRotationOrder },
+            {AMN.l, XRotationOrder },
+            {AMN.u, YRotationOrder },
+            {AMN.d, YRotationOrder },
+            {AMN.x, XRotationOrder },
+            {AMN.y, YRotationOrder },
+            {AMN.z, ZRotationOrder }
         };
 
         private static readonly List<FaceColours> inverseRotationFaces = new List<FaceColours>()
@@ -59,17 +76,22 @@ namespace CubeOrientation
         /// directions to be used, the orientation of the cube must be known. The front
         /// and top side are given.
         /// </summary>
-        public static readonly AbstractMoveNotation[] ABSTRACT_DIRECTIONS = { A.f, A.b, A.r, A.l, A.u, A.d };
+        public static readonly AbstractMoveNotation[] ABSTRACT_DIRECTIONS = { AMN.f, AMN.b, AMN.r, AMN.l, AMN.u, AMN.d };
 
         /// <summary>
         /// The notation for slice moves.
         /// </summary>
-        public static readonly AbstractMoveNotation[] SLICES = { A.m, A.e, A.s };
+        public static readonly AbstractMoveNotation[] SLICES = { AMN.m, AMN.e, AMN.s };
 
         /// <summary>
         /// The notation for rotating the entire cube.
         /// </summary>
-        public static readonly AbstractMoveNotation[] WHOLE_CUBE_ROTATIONS = { A.x, A.y, A.z };
+        public static readonly AbstractMoveNotation[] WHOLE_CUBE_ROTATIONS = { AMN.x, AMN.y, AMN.z };
+
+        /// <summary>
+        /// The directions that would be opposite the x, y, z rotations
+        /// </summary>
+        public static readonly AbstractMoveNotation[] SECONDARY_DIRECTIONS = { AMN.b, AMN.l, AMN.d };
 
         /// <summary>
         /// Get a colour in a rotation order for a specific side of the cube.
@@ -99,19 +121,66 @@ namespace CubeOrientation
                 throw new Exception("The Rotation Order did not have the starting colour");
             }
 
+            index = RotateIndex(index, offset);
+
+            return rotationOrder[index];
+        }
+
+        /// <summary>
+        /// Rotate a direction around an axis or other direction.
+        /// </summary>
+        /// <param name="axis">The axis to rotate around.</param>
+        /// <param name="start">The starting direction to be rotated</param>
+        /// <param name="offset">How far to rotate the direction</param>
+        /// <returns>The starting direction after it has been rotated.</returns>
+        /// <remarks>The <paramref name="axis"/> can be <see cref="ABSTRACT_DIRECTIONS"/> or <see cref="WHOLE_CUBE_ROTATIONS"/>
+        /// The <paramref name="start"/> can ONLY be a <see cref="ABSTRACT_DIRECTIONS"/></remarks>
+        public static AbstractMoveNotation RotateDirection(AbstractMoveNotation axis, AbstractMoveNotation start, int offset)
+        {
+            if(!rotationOrderByAxis.TryGetValue(axis, out AMN[] rotationOrder))
+            {
+                throw new Exception($"{axis} is not valid notation for rotating a direction");
+            }
+
+            int index = rotationOrder.GetIndex(start);
+
+            if(index == -1)
+            {
+                throw new Exception($"{start} is not in the rotation order");
+            }
+
+            if(IsSecondaryDirection(axis))
+            {
+                offset *= -1;
+            }
+
+            index = RotateIndex(index, offset);
+
+            return rotationOrder[index];
+        }
+
+        /// <summary>
+        /// Move an index through an array wrapping at both ends.
+        /// </summary>
+        /// <param name="index">The index</param>
+        /// <param name="offset">How far to move the index</param>
+        /// <param name="rotationLength">How long the array is</param>
+        /// <returns>The index with the offset wrapped</returns>
+        private static int RotateIndex(int index, int offset, int rotationLength = ROTATION_ORDER_LENGTH)
+        {
             index += offset;
 
             //make sure that the offset is within the bounds of the array
             if (index < 0)
             {
-                index += ROTATION_ORDER_LENGTH;
+                index += rotationLength;
             }
             else
             {
-                index %= ROTATION_ORDER_LENGTH;
+                index %= rotationLength;
             }
 
-            return rotationOrder[index];
+            return index;
         }
 
         /// <summary>
@@ -160,6 +229,14 @@ namespace CubeOrientation
         public static bool IsSecondaryColour(FaceColours colour)
         {
             return SECONDARY_COLOURS.GetIndex(colour) != -1;
+        }
+
+        /// <summary>
+        /// Checks if a direction is a <see cref="SECONDARY_DIRECTIONS"/>
+        /// </summary>
+        public static bool IsSecondaryDirection(AbstractMoveNotation direction)
+        {
+            return SECONDARY_DIRECTIONS.GetIndex(direction) != -1;
         }
 
         /// <summary>
